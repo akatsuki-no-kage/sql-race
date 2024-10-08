@@ -20,30 +20,32 @@ impl Score {
     }
 
     pub async fn insert(&self, db: &SqlitePool) -> Result<()> {
-        sqlx::query("INSERT INTO scores (username, score, created_at) VALUES (?, ?, ?)")
-            .bind(&self.username)
-            .bind(&self.score)
-            .bind(&self.created_at)
-            .execute(db)
-            .await?;
+        sqlx::query!(
+            "INSERT INTO scores (username, score, created_at) VALUES (?, ?, ?)",
+            self.username,
+            self.score,
+            self.created_at
+        )
+        .execute(db)
+        .await?;
 
         Ok(())
     }
 
     pub async fn delete_all(pool: &SqlitePool) -> Result<()> {
-        sqlx::query("DELETE FROM scores").execute(pool).await?;
+        sqlx::query!("DELETE FROM scores").execute(pool).await?;
 
         Ok(())
     }
 
     pub async fn delete_one(&self, pool: &SqlitePool) -> Result<()> {
-        sqlx::query(
+        sqlx::query!(
             r#"
             DELETE FROM scores
             WHERE username = ?
             "#,
+            self.username
         )
-        .bind(&self.username)
         .execute(pool)
         .await?;
 
