@@ -1,6 +1,7 @@
 mod components;
 mod menu;
 mod ranking_page;
+mod gameplay;
 
 use anyhow::Result;
 use ranking_page::RankingPage;
