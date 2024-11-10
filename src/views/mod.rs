@@ -1,36 +1,42 @@
 mod components;
+mod ingame_page;
 mod menu;
 mod ranking_page;
-mod gameplay;
 
 use anyhow::Result;
+use ingame_page::InGamePage;
 use ranking_page::RankingPage;
-use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind};
+
 use sqlx::SqlitePool;
 
-pub async fn init(db: &SqlitePool) -> Result<()> {
+use crate::app::{App, AppState};
+
+pub async fn init(db: &SqlitePool, app: &mut App) -> Result<()> {
     let mut terminal = ratatui::init();
     terminal.clear()?;
 
     let mut ranking_page = RankingPage::default();
     ranking_page.load_scores(db).await?;
 
-    loop {
-        terminal.draw(|frame| {
-            frame.render_widget(&ranking_page, frame.area());
-        })?;
+    let mut ingame = InGamePage::new();
 
-        if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press {
-                match (key.modifiers, key.code) {
-                    (_, KeyCode::Char('q')) => {
-                        terminal.clear()?;
-                        ratatui::try_restore()?;
-                        return Ok(());
-                    }
-                    _ => println!("Nothing"),
-                }
+    loop {
+        match app.state {
+            AppState::Menu => (),
+            AppState::InGame => {
+                ingame.update_states();
+                ingame.update_question().await?;
+                terminal.draw(|frame| {
+                    frame.render_widget(&ingame, frame.area());
+                })?;
+                ingame.handle_key_events(app)?;
             }
+        }
+
+        if app.exit {
+            terminal.clear()?;
+            ratatui::try_restore()?;
+            return Ok(());
         }
     }
 }
