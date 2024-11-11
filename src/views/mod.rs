@@ -1,5 +1,5 @@
 mod components;
-mod ingame_page;
+pub mod ingame_page;
 mod menu;
 mod ranking_page;
 
@@ -25,11 +25,11 @@ pub async fn init(db: &SqlitePool, app: &mut App) -> Result<()> {
             AppState::Menu => (),
             AppState::InGame => {
                 ingame.update_states();
-                ingame.update_question().await?;
+                ingame.update_question();
                 terminal.draw(|frame| {
                     frame.render_widget(&ingame, frame.area());
                 })?;
-                ingame.handle_key_events(app)?;
+                ingame.handle_key_events(app,db)?;
             }
         }
 

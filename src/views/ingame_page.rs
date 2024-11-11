@@ -2,7 +2,7 @@ use anyhow::Result;
 use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 use ratatui::style::{Color, Style};
 use ratatui::text::ToText;
-use ratatui::widgets::{List, ListItem};
+use ratatui::widgets::{Cell, List, ListItem, Row as TableRow, Table};
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
@@ -14,9 +14,9 @@ use ratatui::{
 };
 use std::path::Path;
 use std::time::{Duration, Instant};
-
+use sqlx::{Row, SqlitePool};
 use crate::app::App;
-use crate::controllers::get_question;
+use crate::controllers::{get_question};
 
 #[derive(Debug)]
 pub struct InGamePage {
@@ -63,7 +63,7 @@ impl InGamePage {
             self.last_instant = Instant::now();
         }
     }
-    pub fn handle_key_events(&mut self, app: &mut App) -> Result<()> {
+    pub fn handle_key_events(&mut self, app: &mut App,db: &SqlitePool) -> Result<()> {
         if let Event::Key(key) = event::read()? {
             if key.kind == KeyEventKind::Press {
                 match (key.modifiers, key.code) {
@@ -81,7 +81,11 @@ impl InGamePage {
                         self.input.pop();
                     }
                     (_, KeyCode::Enter) => {
-                        self.input.push('\n');
+                        if (self.selected_block == 3 && self.selected_option == 1){
+                            InGamePage::view_schema(db);
+                        } else if (self.selected_block == 0) {
+                            self.input.push('\n');
+                        }
                     }
                     (_, KeyCode::Up) => {
                         if self.selected_block == 3 {
@@ -120,6 +124,43 @@ impl InGamePage {
             result: "None".to_string(),
             current_is_done: true,
         }
+    }
+    async fn view_schema( pool: &SqlitePool) -> Result<(), Box<dyn std::error::Error>> {
+        let mut terminal = ratatui::Terminal::new(ratatui::backend::CrosstermBackend::new(std::io::stdout()))?;
+        let columns = sqlx::query(&format!("PRAGMA table_info({})", "scores"))
+            .fetch_all(pool)
+            .await?
+            .iter()
+            .map(|row| row.get::<String, _>("name"))
+            .collect::<Vec<String>>();
+        let query = format!("SELECT * FROM {}", "scores");
+        let rows = sqlx::query(&query).fetch_all(pool).await?;
+        let header = TableRow::new(
+            columns
+                .iter()
+                .map(|col| Cell::from(col.clone()).style(Style::default().fg(Color::Yellow)))
+                .collect::<Vec<Cell>>(),
+        );let widths = [
+            Constraint::Length(5),
+            Constraint::Length(5),
+            Constraint::Length(10),
+        ];
+        let table_rows = vec![
+            TableRow::new(vec![Cell::from("Row 1 - Col 1"), Cell::from("Row 1 - Col 2")]),
+            TableRow::new(vec![Cell::from("Row 2 - Col 1"), Cell::from("Row 2 - Col 2")]),
+        ];
+        terminal.draw(|f| {
+            let size = f.size();
+            let chunks = Layout::default()
+                .constraints([Constraint::Percentage(100)].as_ref())
+                .split(size);
+
+            let table = Table::new(table_rows,widths)
+                .header(header)
+                .block(Block::default().title("Header").borders(Borders::ALL));
+            f.render_widget(table, chunks[0]);
+        })?;
+        Ok(())
     }
     pub async fn update_question(&mut self) -> Result<()> {
         let question_idx = 1;
