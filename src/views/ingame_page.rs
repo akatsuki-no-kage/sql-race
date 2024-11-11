@@ -140,25 +140,13 @@ impl InGamePage {
                 .iter()
                 .map(|col| Cell::from(col.clone()).style(Style::default().fg(Color::Yellow)))
                 .collect::<Vec<Cell>>(),
-        );let widths = [
-            Constraint::Length(5),
-            Constraint::Length(5),
-            Constraint::Length(10),
-        ];
-        let table_rows = vec![
-            TableRow::new(vec![Cell::from("Row 1 - Col 1"), Cell::from("Row 1 - Col 2")]),
-            TableRow::new(vec![Cell::from("Row 2 - Col 1"), Cell::from("Row 2 - Col 2")]),
-        ];
+        );
         terminal.draw(|f| {
             let size = f.size();
             let chunks = Layout::default()
                 .constraints([Constraint::Percentage(100)].as_ref())
                 .split(size);
 
-            let table = Table::new(table_rows,widths)
-                .header(header)
-                .block(Block::default().title("Header").borders(Borders::ALL));
-            f.render_widget(table, chunks[0]);
         })?;
         Ok(())
     }
