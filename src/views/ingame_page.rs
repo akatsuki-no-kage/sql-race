@@ -1,6 +1,7 @@
 use crate::app::App;
-use crate::controllers::{get_question, run_query, view_schemas};
+use crate::controllers::{check_exist_username, get_question, get_score, run_query, view_schemas};
 use crate::models::schema::QuestionTable;
+use crate::models::score::Score;
 use anyhow::Result;
 use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 use ratatui::style::{Color, Style};
@@ -20,7 +21,7 @@ use std::time::{Duration, Instant};
 
 #[derive(Debug)]
 pub struct InGamePage {
-    score: u8,
+    score: i64,
     time_left: f32,
     popup_visible: bool,
     tables_info: Vec<QuestionTable>,
@@ -194,6 +195,26 @@ impl InGamePage {
                     (KeyModifiers::CONTROL, KeyCode::Char('r')) => {
                         self.run_query().await?;
                     }
+                    (KeyModifiers::CONTROL, KeyCode::Char('h')) => {
+                        self.view_schema(db).await?;
+                    }
+                    (KeyModifiers::CONTROL, KeyCode::Char('s')) => {
+                        let question = get_question(Path::new(&format!(
+                            "./questions/question-{}",
+                            self.question_idx
+                        )))
+                        .await?;
+
+                        if get_score(&self.input, &question.answer, &question.schema).await? {
+                            self.score += self.question_idx as i64 * 10;
+                            println!("{:?}", self.score);
+                            if check_exist_username(&app.pool, app.username.clone()).await? {
+                                Score::update_score(&app.pool, app.username.clone(), self.score)
+                                    .await?;
+                                self.current_is_done = true;
+                            };
+                        }
+                    }
                     (KeyModifiers::NONE, KeyCode::Left) => {
                         if self.popup_visible {
                             self.previous_tab();
@@ -260,11 +281,26 @@ impl InGamePage {
                     (_, KeyCode::Enter) => {
                         if self.selected_block == 3 && self.selected_option == 1 {
                             self.view_schema(db).await?;
+                        } else if self.selected_block == 3 && self.selected_option == 0 {
+                            self.run_query().await?;
+                        } else if self.selected_block == 3 && self.selected_option == 2 {
+                            let question = get_question(Path::new(&format!(
+                                "./questions/question-{}",
+                                self.question_idx
+                            )))
+                            .await?;
+
+                            if get_score(&self.input, &question.answer, &question.schema).await? {
+                                app.score += self.question_idx as i64 * 10;
+                                Score::update_score(db, app.username.clone(), app.score).await?;
+                                self.score = app.score;
+                                self.current_is_done = true;
+                            }
+                        } else if self.selected_block == 3 && self.selected_option == 3 {
+                            app.exit = true;
                         } else if self.selected_block == 0 {
                             self.input.insert(self.cursor_position, '\n');
                             self.cursor_position += 1;
-                        } else if self.selected_block == 3 && self.selected_option == 0 {
-                            self.run_query().await?;
                         }
                     }
                     _ => {}
@@ -364,12 +400,12 @@ impl InGamePage {
             tab_idx: 0,
             last_instant: Instant::now(),
             question: String::new(),
-            question_idx: 1,
+            question_idx: 0,
             options: vec![
-                "Run".to_string(),
-                "View Schema".to_string(),
-                "Exit".to_string(),
-                "Clear Screen".to_string(),
+                "Run (Ctrl + R)".to_string(),
+                "View Schema (Ctrl + H)".to_string(),
+                "Submit (Ctrl + S)".to_string(),
+                "Exit (Ctrl + Q)".to_string(),
             ],
             selected_option: 0,
             score: 0,
@@ -381,17 +417,12 @@ impl InGamePage {
     }
 
     pub async fn update_question(&mut self) -> Result<()> {
-        let question_idx = 1;
-        let current_question_path = format!("./questions/question-{}", question_idx);
-        let confirmed_answer = Path::new(&current_question_path).join("confirmed_answer.sql");
-
         if self.current_is_done {
-            if !confirmed_answer.exists() {
-                let question = get_question(Path::new(&current_question_path)).await?;
-                self.question = question.question;
-                self.question_idx = question_idx;
-                self.current_is_done = false;
-            }
+            self.question_idx += 1;
+            let current_question_path = format!("./questions/question-{}", self.question_idx);
+            let question = get_question(Path::new(&current_question_path)).await?;
+            self.question = question.question;
+            self.current_is_done = false;
         }
 
         Ok(())
