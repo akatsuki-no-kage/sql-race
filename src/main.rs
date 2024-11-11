@@ -1,6 +1,5 @@
 use anyhow::Result;
 use app::App;
-use sqlx::SqlitePool;
 
 pub mod app;
 pub mod controllers;
@@ -9,10 +8,7 @@ pub mod views;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let pool = SqlitePool::connect("sqlite:score.db").await?;
-    let mut app = App::new();
-    views::init(&pool, &mut app).await?;
-
-    println!("Hello, world!");
+    let mut app = App::new(String::new()).await?;
+    views::init(&mut app).await?;
     Ok(())
 }
