@@ -19,12 +19,11 @@ impl Score {
         Ok(scores)
     }
 
-    pub async fn insert(&self, db: &SqlitePool) -> Result<()> {
+    pub async fn insert(db: &SqlitePool, username: String, score: i64) -> Result<()> {
         sqlx::query!(
-            "INSERT INTO scores (username, score, created_at) VALUES (?, ?, ?)",
-            self.username,
-            self.score,
-            self.created_at
+            "INSERT INTO scores (username, score) VALUES (?, ?)",
+            username,
+            score,
         )
         .execute(db)
         .await?;
@@ -48,6 +47,20 @@ impl Score {
         )
         .execute(pool)
         .await?;
+
+        Ok(())
+    }
+    pub async fn update_score(pool: &SqlitePool, username: String, score: i64) -> Result<()> {
+        println!("update!");
+        let query = sqlx::query!(
+            "UPDATE scores SET score = ? WHERE username = ?",
+            username,
+            score
+        )
+        .execute(pool)
+        .await?;
+
+        println!("{:?}", query);
 
         Ok(())
     }
