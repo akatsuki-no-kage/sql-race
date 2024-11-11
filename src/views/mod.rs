@@ -25,11 +25,11 @@ pub async fn init(db: &SqlitePool, app: &mut App) -> Result<()> {
             AppState::Menu => (),
             AppState::InGame => {
                 ingame.update_states();
-                ingame.update_question();
+                ingame.update_question().await?;
                 terminal.draw(|frame| {
                     frame.render_widget(&ingame, frame.area());
                 })?;
-                ingame.handle_key_events(app,db)?;
+                ingame.handle_key_events(app, db).await?;
             }
         }
 
