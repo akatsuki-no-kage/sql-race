@@ -1,8 +1,5 @@
-use std::path::Path;
-
 use anyhow::Result;
 use app::App;
-use controllers::get_question;
 use sqlx::SqlitePool;
 
 pub mod app;
