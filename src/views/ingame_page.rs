@@ -1,8 +1,10 @@
+use crate::app::App;
+use crate::controllers::{get_question, run_query, view_schemas};
+use crate::models::schema::QuestionTable;
 use anyhow::Result;
 use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 use ratatui::style::{Color, Style};
-use ratatui::text::ToText;
-use ratatui::widgets::{Cell, List, ListItem, Row as TableRow, Table};
+use ratatui::widgets::{Cell, Clear, List, ListItem, Row, Table};
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
@@ -12,28 +14,48 @@ use ratatui::{
     widgets::Widget,
     widgets::{Block, Borders, Paragraph},
 };
+use sqlx::{Column, Row as SqlRow, SqlitePool};
 use std::path::Path;
 use std::time::{Duration, Instant};
-use sqlx::{Row, SqlitePool};
-use crate::app::App;
-use crate::controllers::{get_question};
 
 #[derive(Debug)]
 pub struct InGamePage {
-    exit: bool,
     score: u8,
     time_left: f32,
-    tick_rate: Duration,
+    popup_visible: bool,
+    tables_info: Vec<QuestionTable>,
+    tab_idx: usize,
     last_instant: Instant,
     input: String,
+    cursor_position: usize,
     selected_block: usize,
     question: String,
+    question_idx: u8,
     selected_option: usize,
     options: Vec<String>,
     result: String,
     current_is_done: bool,
+    text_selected: bool,
+    clipboard: String,
 }
+
 impl InGamePage {
+    pub fn next_tab(&mut self) {
+        if self.tab_idx == self.tables_info.len() - 1 {
+            self.tab_idx = 0;
+        } else {
+            self.tab_idx += 1;
+        }
+    }
+
+    pub fn previous_tab(&mut self) {
+        if self.tab_idx == 0 {
+            self.tab_idx = self.tables_info.len() - 1;
+        } else {
+            self.tab_idx -= 1;
+        }
+    }
+
     pub fn next_option(&mut self) {
         if self.selected_option == 0 {
             self.selected_option = self.options.len() - 1;
@@ -41,19 +63,98 @@ impl InGamePage {
             self.selected_option -= 1;
         }
     }
+
     pub fn previous_option(&mut self) {
         self.selected_option = (self.selected_option + 1) % self.options.len();
     }
 
     pub fn next_block(&mut self) {
-        self.selected_block = (self.selected_block + 1) % 4; // Cycle through 4 blocks
+        self.selected_block = (self.selected_block + 1) % 4;
     }
 
     pub fn previous_block(&mut self) {
         if self.selected_block == 0 {
-            self.selected_block = 3; // Go to the last block
+            self.selected_block = 3;
         } else {
             self.selected_block -= 1;
+        }
+    }
+
+    pub fn move_cursor_left(&mut self) {
+        if self.cursor_position > 0 {
+            self.cursor_position -= 1;
+        }
+    }
+
+    pub fn move_cursor_right(&mut self) {
+        if self.cursor_position < self.input.len() {
+            self.cursor_position += 1;
+        }
+    }
+
+    pub fn move_cursor_up(&mut self) {
+        let current_line_start = self.input[..self.cursor_position]
+            .rfind('\n')
+            .map(|pos| pos + 1)
+            .unwrap_or(0);
+
+        if let Some(prev_line_start) = self.input[..current_line_start.saturating_sub(1)]
+            .rfind('\n')
+            .map(|pos| pos + 1)
+        {
+            let current_column = self.cursor_position - current_line_start;
+            let prev_line_length = current_line_start - prev_line_start - 1;
+            self.cursor_position = prev_line_start + current_column.min(prev_line_length);
+        }
+    }
+
+    pub fn move_cursor_down(&mut self) {
+        if let Some(current_line_end) = self.input[self.cursor_position..].find('\n') {
+            let next_line_start = self.cursor_position + current_line_end + 1;
+            if next_line_start < self.input.len() {
+                let current_line_start = self.input[..self.cursor_position]
+                    .rfind('\n')
+                    .map(|pos| pos + 1)
+                    .unwrap_or(0);
+                let current_column = self.cursor_position - current_line_start;
+
+                let next_line_length = self.input[next_line_start..]
+                    .find('\n')
+                    .unwrap_or(self.input.len() - next_line_start);
+
+                self.cursor_position = next_line_start + current_column.min(next_line_length);
+            }
+        }
+    }
+
+    pub fn select_all(&mut self) {
+        self.text_selected = true;
+    }
+
+    pub fn copy_selected(&mut self) {
+        if self.text_selected {
+            self.clipboard = self.input.clone();
+        }
+    }
+
+    pub fn paste(&mut self) {
+        if !self.clipboard.is_empty() {
+            if self.text_selected {
+                self.input = self.clipboard.clone();
+                self.cursor_position = self.input.len();
+                self.text_selected = false;
+            } else {
+                self.input.insert_str(self.cursor_position, &self.clipboard);
+                self.cursor_position += self.clipboard.len();
+            }
+        }
+    }
+
+    pub fn delete_selected(&mut self) {
+        if self.text_selected {
+            self.input.clear();
+            self.cursor_position = 0;
+            self.text_selected = false;
         }
     }
 
@@ -62,40 +163,109 @@ impl InGamePage {
             self.time_left -= 1.0;
             self.last_instant = Instant::now();
         }
+
+        if self.tab_idx >= self.tables_info.len() {
+            self.tab_idx = 0;
+        }
     }
-    pub fn handle_key_events(&mut self, app: &mut App,db: &SqlitePool) -> Result<()> {
+
+    pub async fn handle_key_events(&mut self, app: &mut App, db: &SqlitePool) -> Result<()> {
         if let Event::Key(key) = event::read()? {
             if key.kind == KeyEventKind::Press {
                 match (key.modifiers, key.code) {
                     (KeyModifiers::CONTROL, KeyCode::Char('q')) => {
                         app.exit = true;
                     }
-                    (_, KeyCode::Left) => self.previous_block(),
-                    (_, KeyCode::Right) => self.next_block(),
-                    (_, KeyCode::Char(c)) => {
+                    (KeyModifiers::CONTROL, KeyCode::Char('a')) => {
                         if self.selected_block == 0 {
-                            self.input.push(c)
+                            self.select_all();
                         }
                     }
-                    (_, KeyCode::Backspace) => {
-                        self.input.pop();
-                    }
-                    (_, KeyCode::Enter) => {
-                        if (self.selected_block == 3 && self.selected_option == 1){
-                            InGamePage::view_schema(db);
-                        } else if (self.selected_block == 0) {
-                            self.input.push('\n');
+                    (KeyModifiers::CONTROL, KeyCode::Char('c')) => {
+                        if self.selected_block == 0 {
+                            self.copy_selected();
                         }
+                    }
+                    (KeyModifiers::CONTROL, KeyCode::Char('v')) => {
+                        if self.selected_block == 0 {
+                            self.paste();
+                        }
+                    }
+                    (KeyModifiers::CONTROL, KeyCode::Char('r')) => {
+                        self.run_query().await?;
+                    }
+                    (KeyModifiers::NONE, KeyCode::Left) => {
+                        if self.popup_visible {
+                            self.previous_tab();
+                        } else if self.selected_block == 0 {
+                            self.move_cursor_left();
+                        }
+                    }
+                    (KeyModifiers::CONTROL, KeyCode::Left) => {
+                        self.previous_block();
+                    }
+                    (KeyModifiers::NONE, KeyCode::Right) => {
+                        if self.popup_visible {
+                            self.next_tab();
+                        } else if self.selected_block == 0 {
+                            self.move_cursor_right();
+                        }
+                    }
+                    (KeyModifiers::CONTROL, KeyCode::Right) => {
+                        self.next_block();
                     }
                     (_, KeyCode::Up) => {
                         if self.selected_block == 3 {
-                            self.next_option()
-                        };
+                            self.next_option();
+                        } else if self.selected_block == 0 {
+                            self.move_cursor_up();
+                        }
                     }
                     (_, KeyCode::Down) => {
                         if self.selected_block == 3 {
-                            self.previous_option()
-                        };
+                            self.previous_option();
+                        } else if self.selected_block == 0 {
+                            self.move_cursor_down();
+                        }
+                    }
+                    (_, KeyCode::Char(c)) => {
+                        if self.selected_block == 0 {
+                            if self.text_selected {
+                                self.input.clear();
+                                self.text_selected = false;
+                            }
+                            self.input.insert(self.cursor_position, c);
+                            self.cursor_position += 1;
+                        }
+                    }
+                    (_, KeyCode::Backspace) => {
+                        if self.selected_block == 0 {
+                            if self.text_selected {
+                                self.delete_selected();
+                            } else if self.cursor_position > 0 {
+                                self.input.remove(self.cursor_position - 1);
+                                self.cursor_position -= 1;
+                            }
+                        }
+                    }
+                    (_, KeyCode::Delete) => {
+                        if self.selected_block == 0 {
+                            if self.text_selected {
+                                self.delete_selected();
+                            } else if self.cursor_position < self.input.len() {
+                                self.input.remove(self.cursor_position);
+                            }
+                        }
+                    }
+                    (_, KeyCode::Enter) => {
+                        if self.selected_block == 3 && self.selected_option == 1 {
+                            self.view_schema(db).await?;
+                        } else if self.selected_block == 0 {
+                            self.input.insert(self.cursor_position, '\n');
+                            self.cursor_position += 1;
+                        } else if self.selected_block == 3 && self.selected_option == 0 {
+                            self.run_query().await?;
+                        }
                     }
                     _ => {}
                 }
@@ -104,15 +274,97 @@ impl InGamePage {
         Ok(())
     }
 
+    async fn view_schema(&mut self, db: &SqlitePool) -> Result<()> {
+        if !self.popup_visible {
+            self.tables_info = view_schemas(&db).await?;
+            self.popup_visible = true;
+        } else {
+            self.popup_visible = false;
+        }
+        Ok(())
+    }
+
+    async fn run_query(&mut self) -> Result<()> {
+        let schema = get_question(Path::new(&format!(
+            "./questions/question-{}",
+            self.question_idx
+        )))
+        .await?
+        .schema;
+        self.result = match run_query(&self.input, &schema).await {
+            Ok(rows) => {
+                if let Some(first_row) = rows.first() {
+                    let num_columns = first_row.len();
+                    let mut column_widths = vec![0; num_columns];
+                    let column_names: Vec<String> = first_row
+                        .columns()
+                        .iter()
+                        .map(|col| col.name().to_string())
+                        .collect();
+
+                    for row in &rows {
+                        for col_idx in 0..num_columns {
+                            let value = match row.try_get::<String, _>(col_idx) {
+                                Ok(val) => val,
+                                Err(_) => match row.try_get::<i32, _>(col_idx) {
+                                    Ok(val) => val.to_string(),
+                                    Err(_) => "NULL".to_string(),
+                                },
+                            };
+                            column_widths[col_idx] = column_widths[col_idx].max(value.len());
+                        }
+                    }
+
+                    let mut result_string = String::new();
+
+                    for (i, width) in column_widths.iter().enumerate() {
+                        let header_name = &column_names[i];
+                        result_string.push_str(&format!(
+                            "{:<width$} | ",
+                            header_name,
+                            width = width
+                        ));
+                    }
+                    result_string.push_str("\n");
+                    result_string.push_str(&"-".repeat(result_string.len()));
+                    result_string.push_str("\n");
+
+                    for row in rows {
+                        for (col_idx, width) in column_widths.iter().enumerate() {
+                            let value = match row.try_get::<String, _>(col_idx) {
+                                Ok(val) => val,
+                                Err(_) => match row.try_get::<i32, _>(col_idx) {
+                                    Ok(val) => val.to_string(),
+                                    Err(_) => "NULL".to_string(),
+                                },
+                            };
+                            result_string.push_str(&format!("{:<width$} | ", value, width = width));
+                        }
+                        result_string.push_str("\n");
+                    }
+
+                    result_string
+                } else {
+                    "No rows returned".to_string()
+                }
+            }
+            Err(err) => format!("Query failed: {:?}", err.to_string()),
+        };
+        Ok(())
+    }
+
     pub fn new() -> Self {
         Self {
             selected_block: 0,
             input: String::new(),
-            exit: false,
+            cursor_position: 0,
             time_left: 30.0,
-            tick_rate: Duration::from_millis(50),
+            popup_visible: false,
+            tables_info: vec![],
+            tab_idx: 0,
             last_instant: Instant::now(),
             question: String::new(),
+            question_idx: 1,
             options: vec![
                 "Run".to_string(),
                 "View Schema".to_string(),
@@ -123,33 +375,11 @@ impl InGamePage {
             score: 0,
             result: "None".to_string(),
             current_is_done: true,
+            text_selected: false,
+            clipboard: String::new(),
         }
     }
-    async fn view_schema( pool: &SqlitePool) -> Result<(), Box<dyn std::error::Error>> {
-        let mut terminal = ratatui::Terminal::new(ratatui::backend::CrosstermBackend::new(std::io::stdout()))?;
-        let columns = sqlx::query(&format!("PRAGMA table_info({})", "scores"))
-            .fetch_all(pool)
-            .await?
-            .iter()
-            .map(|row| row.get::<String, _>("name"))
-            .collect::<Vec<String>>();
-        let query = format!("SELECT * FROM {}", "scores");
-        let rows = sqlx::query(&query).fetch_all(pool).await?;
-        let header = TableRow::new(
-            columns
-                .iter()
-                .map(|col| Cell::from(col.clone()).style(Style::default().fg(Color::Yellow)))
-                .collect::<Vec<Cell>>(),
-        );
-        terminal.draw(|f| {
-            let size = f.size();
-            let chunks = Layout::default()
-                .constraints([Constraint::Percentage(100)].as_ref())
-                .split(size);
 
-        })?;
-        Ok(())
-    }
     pub async fn update_question(&mut self) -> Result<()> {
         let question_idx = 1;
         let current_question_path = format!("./questions/question-{}", question_idx);
@@ -159,6 +389,7 @@ impl InGamePage {
             if !confirmed_answer.exists() {
                 let question = get_question(Path::new(&current_question_path)).await?;
                 self.question = question.question;
+                self.question_idx = question_idx;
                 self.current_is_done = false;
             }
         }
@@ -166,9 +397,9 @@ impl InGamePage {
         Ok(())
     }
 }
+
 impl Widget for &InGamePage {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        //Create All Block
         let main_area = Layout::default()
             .direction(Direction::Vertical)
             .constraints(
@@ -199,7 +430,7 @@ impl Widget for &InGamePage {
             .direction(Direction::Horizontal)
             .constraints([Constraint::Percentage(70), Constraint::Percentage(30)].as_ref())
             .split(main_area[2]);
-        // Generate Query, Question and Result Block
+
         let chunks = vec![
             query_and_question_area[0],
             query_and_question_area[1],
@@ -210,7 +441,18 @@ impl Widget for &InGamePage {
             ("Question".to_string(), self.question.as_str(), Color::Green),
             ("Result".to_string(), self.result.as_str(), Color::Blue),
         ];
+
         for (i, (chunk, (title, content, color))) in chunks.iter().zip(blocks.iter()).enumerate() {
+            let mut display_content = content.to_string();
+            if i == 0 && self.selected_block == 0 {
+                // Insert cursor for the Query block when it's selected
+                if self.text_selected {
+                    display_content = format!("\x1b[7m{}\x1b[0m", display_content);
+                } else {
+                    display_content.insert(self.cursor_position, '|');
+                }
+            }
+
             let block = Block::default()
                 .title(title.as_str())
                 .borders(Borders::ALL)
@@ -219,12 +461,12 @@ impl Widget for &InGamePage {
                 } else {
                     Style::default().fg(Color::White)
                 });
-            let paragraph = Paragraph::new(content.to_text())
+            let paragraph = Paragraph::new(display_content)
                 .block(block)
                 .wrap(ratatui::widgets::Wrap { trim: true });
             paragraph.render(*chunk, buf);
         }
-        // Generate Options Block
+
         let items: Vec<ListItem> = self
             .options
             .iter()
@@ -249,13 +491,13 @@ impl Widget for &InGamePage {
                 })),
         );
         list.render(result_and_features_area[1], buf);
-        // Block Score
+
         let block_score = Block::default().title("Score").borders(Borders::ALL);
         Paragraph::new(self.score.to_string())
             .centered()
             .block(block_score)
             .render(time_and_score_area[0], buf);
-        // Block Time Left
+
         let block_time_left = Block::default().title("Time left").borders(Borders::ALL);
         let block_hotkey_guide = Block::default().borders(Borders::ALL);
 
@@ -263,8 +505,9 @@ impl Widget for &InGamePage {
             .centered()
             .block(block_time_left)
             .render(time_and_score_area[1], buf);
+
         let hotkey_guide = Text::from(vec![Line::from(vec![
-            "Enter: Choose / \u{2192}, \u{2190}: Move / Esc: Open Menu / "
+            "Ctrl+A: Select All / Ctrl + R: Run Query / Enter: Choose / \u{2192}, \u{2190}: Move / Esc: Menu"
                 .green()
                 .into(),
         ])]);
@@ -272,5 +515,99 @@ impl Widget for &InGamePage {
             .centered()
             .block(block_hotkey_guide)
             .render(time_and_score_area[2], buf);
+
+        if self.popup_visible {
+            let selected_table = &self.tables_info[self.tab_idx];
+            let centered_popup_area = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Percentage(25),
+                    Constraint::Percentage(50),
+                    Constraint::Percentage(25),
+                ])
+                .split(area);
+
+            let popup_area = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([Constraint::Length(3), Constraint::Percentage(90)])
+                .split(centered_popup_area[1]);
+
+            let tab_area = popup_area[0];
+            let tab_width = tab_area.width / self.tables_info.len() as u16;
+
+            let tab_chunks = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints(vec![Constraint::Length(tab_width); self.tables_info.len()])
+                .split(tab_area);
+
+            for (i, (tab_chunk, table)) in
+                tab_chunks.iter().zip(self.tables_info.iter()).enumerate()
+            {
+                let style = if self.tab_idx == i {
+                    Style::default().fg(Color::Green)
+                } else {
+                    Style::default().fg(Color::White)
+                };
+                let tab_name = &table.name;
+                let tab = Paragraph::new(tab_name.to_string())
+                    .style(style)
+                    .alignment(ratatui::layout::Alignment::Center)
+                    .block(Block::default().borders(Borders::ALL).border_style(style));
+                tab.render(*tab_chunk, buf);
+            }
+
+            let rows: Vec<Row> = selected_table
+                .rows
+                .iter()
+                .map(|row| {
+                    Row::new(vec![
+                        Cell::from(row.col_id.to_string()),
+                        Cell::from(row.name.clone()),
+                        Cell::from(row.data_type.clone()),
+                        Cell::from(row.not_null.to_string()),
+                        Cell::from(
+                            row.default_value
+                                .clone()
+                                .unwrap_or_else(|| "NULL".to_string()),
+                        ),
+                        Cell::from(row.primary_key.to_string()),
+                    ])
+                })
+                .collect();
+
+            let header_row = Row::new(vec![
+                Cell::from("ID").style(Style::default().fg(Color::Yellow)),
+                Cell::from("Name").style(Style::default().fg(Color::Yellow)),
+                Cell::from("Type").style(Style::default().fg(Color::Yellow)),
+                Cell::from("Not Null").style(Style::default().fg(Color::Yellow)),
+                Cell::from("Default").style(Style::default().fg(Color::Yellow)),
+                Cell::from("PK").style(Style::default().fg(Color::Yellow)),
+            ]);
+
+            let mut all_rows = vec![header_row];
+            all_rows.extend(rows);
+
+            let table = Table::new(
+                all_rows,
+                &[
+                    Constraint::Length(5),
+                    Constraint::Length(15),
+                    Constraint::Length(10),
+                    Constraint::Length(10),
+                    Constraint::Length(30),
+                    Constraint::Length(5),
+                ],
+            )
+            .block(
+                Block::default()
+                    .title(format!("Schema: {}", selected_table.name))
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(Color::Yellow)),
+            );
+
+            let table_area = popup_area[1];
+            Clear.render(table_area, buf);
+            table.render(table_area, buf);
+        }
     }
 }
