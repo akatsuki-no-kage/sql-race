@@ -1,5 +1,5 @@
 use crate::app::App;
-use crate::controllers::{check_exist_username, get_question, get_score, run_query, view_schemas};
+use crate::controllers::{get_question, get_score, run_query, view_schemas};
 use crate::models::schema::QuestionTable;
 use crate::models::score::Score;
 use anyhow::Result;
@@ -196,23 +196,47 @@ impl InGamePage {
                         self.run_query().await?;
                     }
                     (KeyModifiers::CONTROL, KeyCode::Char('h')) => {
-                        self.view_schema(db).await?;
-                    }
-                    (KeyModifiers::CONTROL, KeyCode::Char('s')) => {
-                        let question = get_question(Path::new(&format!(
+                        match get_question(Path::new(&format!(
                             "./questions/question-{}",
                             self.question_idx
                         )))
-                        .await?;
-
-                        if get_score(&self.input, &question.answer, &question.schema).await? {
-                            self.score += self.question_idx as i64 * 10;
-                            println!("{:?}", self.score);
-                            if check_exist_username(&app.pool, app.username.clone()).await? {
-                                Score::update_score(&app.pool, app.username.clone(), self.score)
-                                    .await?;
-                                self.current_is_done = true;
-                            };
+                        .await
+                        {
+                            Ok(question) => self.view_schema(&question.schema).await?,
+                            Err(_) => {
+                                self.result = format!("Cannot get question - {}", self.question_idx)
+                            }
+                        }
+                    }
+                    (KeyModifiers::CONTROL, KeyCode::Char('s')) => {
+                        match get_question(Path::new(&format!(
+                            "./questions/question-{}",
+                            self.question_idx
+                        )))
+                        .await
+                        {
+                            Ok(question) => {
+                                match get_score(&self.input, &question.answer, &question.schema)
+                                    .await
+                                {
+                                    Ok(is_correct) => {
+                                        if is_correct {
+                                            self.score += self.question_idx as i64 * 10;
+                                            Score::update_score(
+                                                db,
+                                                app.username.clone(),
+                                                self.score,
+                                            )
+                                            .await?;
+                                            self.current_is_done = true;
+                                        }
+                                    }
+                                    Err(err) => {
+                                        self.result = format!("Error calculating score: {:?}", err)
+                                    }
+                                }
+                            }
+                            Err(err) => self.result = err.to_string(),
                         }
                     }
                     (KeyModifiers::NONE, KeyCode::Left) => {
@@ -280,21 +304,51 @@ impl InGamePage {
                     }
                     (_, KeyCode::Enter) => {
                         if self.selected_block == 3 && self.selected_option == 1 {
-                            self.view_schema(db).await?;
-                        } else if self.selected_block == 3 && self.selected_option == 0 {
-                            self.run_query().await?;
-                        } else if self.selected_block == 3 && self.selected_option == 2 {
-                            let question = get_question(Path::new(&format!(
+                            match get_question(Path::new(&format!(
                                 "./questions/question-{}",
                                 self.question_idx
                             )))
-                            .await?;
-
-                            if get_score(&self.input, &question.answer, &question.schema).await? {
-                                app.score += self.question_idx as i64 * 10;
-                                Score::update_score(db, app.username.clone(), app.score).await?;
-                                self.score = app.score;
-                                self.current_is_done = true;
+                            .await
+                            {
+                                Ok(question) => self.view_schema(&question.schema).await?,
+                                Err(_) => {
+                                    self.result =
+                                        format!("Cannot get question - {}", self.question_idx)
+                                }
+                            }
+                        } else if self.selected_block == 3 && self.selected_option == 0 {
+                            self.run_query().await?;
+                        } else if self.selected_block == 3 && self.selected_option == 2 {
+                            match get_question(Path::new(&format!(
+                                "./questions/question-{}",
+                                self.question_idx
+                            )))
+                            .await
+                            {
+                                Ok(question) => {
+                                    match get_score(&self.input, &question.answer, &question.schema)
+                                        .await
+                                    {
+                                        Ok(is_correct) => {
+                                            if is_correct {
+                                                app.score += self.question_idx as i64 * 10;
+                                                Score::update_score(
+                                                    db,
+                                                    app.username.clone(),
+                                                    app.score,
+                                                )
+                                                .await?;
+                                                self.score = app.score;
+                                                self.current_is_done = true;
+                                            }
+                                        }
+                                        Err(err) => {
+                                            self.result =
+                                                format!("Error calculating score: {:?}", err)
+                                        }
+                                    }
+                                }
+                                Err(err) => self.result = err.to_string(),
                             }
                         } else if self.selected_block == 3 && self.selected_option == 3 {
                             app.exit = true;
@@ -310,9 +364,9 @@ impl InGamePage {
         Ok(())
     }
 
-    async fn view_schema(&mut self, db: &SqlitePool) -> Result<()> {
+    async fn view_schema(&mut self, schema: &str) -> Result<()> {
         if !self.popup_visible {
-            self.tables_info = view_schemas(&db).await?;
+            self.tables_info = view_schemas(schema).await?;
             self.popup_visible = true;
         } else {
             self.popup_visible = false;
@@ -420,9 +474,15 @@ impl InGamePage {
         if self.current_is_done {
             self.question_idx += 1;
             let current_question_path = format!("./questions/question-{}", self.question_idx);
-            let question = get_question(Path::new(&current_question_path)).await?;
-            self.question = question.question;
-            self.current_is_done = false;
+            match get_question(Path::new(&current_question_path)).await {
+                Ok(question) => {
+                    self.question = question.question;
+                    self.current_is_done = false;
+                }
+                Err(_) => {
+                    self.result = "Victory".to_string();
+                }
+            };
         }
 
         Ok(())
