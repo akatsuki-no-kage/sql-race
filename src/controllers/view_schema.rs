@@ -1,11 +1,14 @@
 use anyhow::Result;
-use sqlx::{Row, SqlitePool};
+use sqlx::{Executor, Row, SqlitePool};
 
 use crate::models::schema::{QuestionRow, QuestionTable};
 
-pub async fn view_schemas(pool: &SqlitePool) -> Result<Vec<QuestionTable>> {
+pub async fn view_schemas(schema: &str) -> Result<Vec<QuestionTable>> {
+    let pool = SqlitePool::connect("sqlite::memory:").await?;
+    pool.execute(schema).await?;
+
     let table_names = sqlx::query!("SELECT name FROM sqlite_schema WHERE type = 'table'")
-        .fetch_all(pool)
+        .fetch_all(&pool)
         .await?
         .into_iter()
         .map(|row| row.name.unwrap())
@@ -15,7 +18,7 @@ pub async fn view_schemas(pool: &SqlitePool) -> Result<Vec<QuestionTable>> {
 
     for name in table_names {
         let rows = sqlx::query(&format!("PRAGMA table_info({})", &name))
-            .fetch_all(pool)
+            .fetch_all(&pool)
             .await?;
         let mut question_rows = vec![];
 
