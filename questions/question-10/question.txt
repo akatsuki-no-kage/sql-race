@@ -1,0 +1,14 @@
+Question 10: You are given a table, BST, containing two columns: N and P, where N represents the value of a node in Binary Tree, and P is the parent of N.
+Write a query to find the node type of Binary Tree ordered by the value of the node. Output one of the following for each node:
+Root: If node is root node.
+Leaf: If node is leaf node.
+Inner: If node is neither root nor leaf node.
+The Binary Tree below illustrates the sample:
+
+                     5
+                  /     \
+                2        8
+              /   \     / \
+             1     3   6   10
+
+

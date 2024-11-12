@@ -198,16 +198,14 @@ impl InGamePage {
                     (KeyModifiers::CONTROL, KeyCode::Char('h')) => {
                         self.view_schema(db).await?;
                     }
-                    (KeyModifiers::CONTROL, KeyCode::Char('s')) => {
+                    (KeyModifiers::CONTROL, KeyCode::Char('g')) => {
                         let question = get_question(Path::new(&format!(
                             "./questions/question-{}",
                             self.question_idx
                         )))
                         .await?;
-
                         if get_score(&self.input, &question.answer, &question.schema).await? {
                             self.score += self.question_idx as i64 * 10;
-                            println!("{:?}", self.score);
                             if check_exist_username(&app.pool, app.username.clone()).await? {
                                 Score::update_score(&app.pool, app.username.clone(), self.score)
                                     .await?;

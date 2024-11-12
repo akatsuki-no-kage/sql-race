@@ -1,0 +1,4 @@
+Question 3: Show all allergies ordered by popularity. Remove NULL values from the query.
+
+
+

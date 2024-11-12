@@ -1,0 +1,3 @@
+Question 6: Show first name and last name concatenated into one column to show their full name.
+
+

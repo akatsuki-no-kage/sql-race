@@ -1,32 +1,32 @@
 CREATE TABLE patients (
-    patient_id INTEGER PRIMARY KEY,
-    first_name TEXT NOT NULL,
-    last_name TEXT NOT NULL,
-    gender CHAR(1),
-    birth_date DATE,
-    city TEXT,
-    province_id CHAR(2),
-    allergies TEXT,
-    height INT,
-    weight INT,
-    FOREIGN KEY (province_id) REFERENCES provinces (province_id)
+  patient_id INTEGER PRIMARY KEY,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  gender CHAR(1),
+  birth_date DATE,
+  city TEXT,
+  province_id CHAR(2),
+  allergies TEXT,
+  height INT,
+  weight INT,
+  FOREIGN KEY (province_id) REFERENCES provinces (province_id)
 );
 CREATE TABLE provinces (
-                           province_id CHAR(2) PRIMARY KEY,
-                           province_name TEXT NOT NULL
+   province_id CHAR(2) PRIMARY KEY,
+   province_name TEXT NOT NULL
 );
 
 INSERT INTO provinces (province_id, province_name) VALUES
-                                                       ('ON', 'Ontario'),
-                                                       ('QC', 'Quebec'),
-                                                       ('BC', 'British Columbia'),
-                                                       ('AB', 'Alberta'),
-                                                       ('NS', 'Nova Scotia'),
-                                                       ('NB', 'New Brunswick'),
-                                                       ('PE', 'Prince Edward Island'),
-                                                       ('NL', 'Newfoundland and Labrador'),
-                                                       ('MB', 'Manitoba'),
-                                                       ('SK', 'Saskatchewan');
+('ON', 'Ontario'),
+('QC', 'Quebec'),
+('BC', 'British Columbia'),
+('AB', 'Alberta'),
+('NS', 'Nova Scotia'),
+('NB', 'New Brunswick'),
+('PE', 'Prince Edward Island'),
+('NL', 'Newfoundland and Labrador'),
+('MB', 'Manitoba'),
+('SK', 'Saskatchewan');
 
 
 
@@ -61,4 +61,5 @@ INSERT INTO patients (patient_id, first_name, last_name, gender, birth_date, cit
 (28, 'Grace', 'Mitchell', 'F', '1999-08-15', 'Winnipeg', 'MB', 'None', 161, 57),
 (29, 'Jackson', 'Perez', 'M', '1995-04-10', 'Regina', 'SK', 'None', 183, 85),
 (30, 'Luna', 'Rogers', 'F', '2004-01-21', 'Quebec City', 'QC', 'None', 155, 50);
+
 

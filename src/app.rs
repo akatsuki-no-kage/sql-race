@@ -17,7 +17,7 @@ pub enum AppState {
 
 impl App {
     pub async fn new(username: String) -> Result<Self> {
-        let pool = SqlitePool::connect("sqlite:score.db").await?;
+        let pool = SqlitePool::connect("sqlite://score.db").await?;
         Ok(Self {
             pool,
             username,
