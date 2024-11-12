@@ -1,5 +1,3 @@
 SELECT
-    first_name,
-    last_name,
-    MAX(height) AS height
+    first_name
 FROM patients;
