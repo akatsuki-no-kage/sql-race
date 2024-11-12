@@ -16,7 +16,8 @@ fn is_row_equal(user_row: SqliteRow, answer_row: SqliteRow) -> bool {
                 user_row
                     .try_get::<i64, _>(column_index)
                     .map(|val| val.to_string())
-                    .unwrap_or_default()
+                    // If both String and i64 fail, return a default (like "NULL")
+                    .unwrap_or_else(|_| "NULL".to_string())
             });
 
         let answer_value = answer_row
@@ -26,9 +27,8 @@ fn is_row_equal(user_row: SqliteRow, answer_row: SqliteRow) -> bool {
                 answer_row
                     .try_get::<i64, _>(column_index)
                     .map(|val| val.to_string())
-                    .unwrap_or_default()
+                    .unwrap_or_else(|_| "NULL".to_string())
             });
-
         user_value == answer_value
     })
 }
