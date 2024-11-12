@@ -51,16 +51,13 @@ impl Score {
         Ok(())
     }
     pub async fn update_score(pool: &SqlitePool, username: String, score: i64) -> Result<()> {
-        println!("update!");
-        let query = sqlx::query!(
+        sqlx::query!(
             "UPDATE scores SET score = ? WHERE username = ?",
-            username,
-            score
+            score,
+            username
         )
         .execute(pool)
         .await?;
-
-        println!("{:?}", query);
 
         Ok(())
     }
