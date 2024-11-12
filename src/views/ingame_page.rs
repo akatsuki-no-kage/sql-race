@@ -38,10 +38,42 @@ pub struct InGamePage {
     current_is_done: bool,
     text_selected: bool,
     clipboard: String,
+    scroll_result_x: u16,
+    scroll_result_y: u16,
+    scroll_question_x: u16,
+    scroll_question_y: u16,
+    scroll_query_x: u16,
+    scroll_query_y: u16,
+    max_length_result: u16,
 }
 
 impl InGamePage {
-    pub fn next_tab(&mut self) {
+    fn scroll_up_result(&mut self) {
+        if self.scroll_result_x <= 0 {
+            self.scroll_result_x = 0;
+        } else {
+            self.scroll_result_x -= 1;
+        }
+    }
+    fn scroll_down_result(&mut self) {
+        self.scroll_result_x += 1;
+    }
+    fn scroll_left_result(&mut self) {
+        if self.scroll_result_y <= 0 {
+            self.scroll_result_y = 0;
+        } else {
+            self.scroll_result_y -= 1;
+        }
+    }
+    fn scroll_right_result(&mut self) {
+        if self.scroll_result_y >= self.max_length_result {
+            self.scroll_result_y = self.max_length_result
+        } else {
+            self.scroll_result_y += 1;
+        }
+    }
+
+    fn next_tab(&mut self) {
         if self.tab_idx == self.tables_info.len() - 1 {
             self.tab_idx = 0;
         } else {
@@ -49,7 +81,7 @@ impl InGamePage {
         }
     }
 
-    pub fn previous_tab(&mut self) {
+    fn previous_tab(&mut self) {
         if self.tab_idx == 0 {
             self.tab_idx = self.tables_info.len() - 1;
         } else {
@@ -92,7 +124,6 @@ impl InGamePage {
             self.cursor_position += 1;
         }
     }
-
     pub fn move_cursor_up(&mut self) {
         let current_line_start = self.input[..self.cursor_position]
             .rfind('\n')
@@ -228,7 +259,12 @@ impl InGamePage {
                                                 self.score,
                                             )
                                             .await?;
+                                            self.cursor_position = 0;
+                                            self.input = "".to_string();
+                                            self.result = "".to_string();
                                             self.current_is_done = true;
+                                        } else {
+                                            self.result = "Wrong answer, try again!".to_string()
                                         }
                                     }
                                     Err(err) => {
@@ -239,11 +275,31 @@ impl InGamePage {
                             Err(err) => self.result = err.to_string(),
                         }
                     }
+                    (KeyModifiers::NONE, KeyCode::Up) => {
+                        if self.selected_block == 2 {
+                            self.scroll_up_result();
+                        } else if self.selected_block == 3 {
+                            self.next_option();
+                        } else if self.selected_block == 0 {
+                            self.move_cursor_up();
+                        }
+                    }
+                    (KeyModifiers::NONE, KeyCode::Down) => {
+                        if self.selected_block == 2 {
+                            self.scroll_down_result();
+                        } else if self.selected_block == 3 {
+                            self.previous_option();
+                        } else if self.selected_block == 0 {
+                            self.move_cursor_down();
+                        }
+                    }
                     (KeyModifiers::NONE, KeyCode::Left) => {
                         if self.popup_visible {
                             self.previous_tab();
                         } else if self.selected_block == 0 {
                             self.move_cursor_left();
+                        } else if self.selected_block == 2 {
+                            self.scroll_left_result();
                         }
                     }
                     (KeyModifiers::CONTROL, KeyCode::Left) => {
@@ -254,24 +310,12 @@ impl InGamePage {
                             self.next_tab();
                         } else if self.selected_block == 0 {
                             self.move_cursor_right();
+                        } else if self.selected_block == 2 {
+                            self.scroll_right_result();
                         }
                     }
                     (KeyModifiers::CONTROL, KeyCode::Right) => {
                         self.next_block();
-                    }
-                    (_, KeyCode::Up) => {
-                        if self.selected_block == 3 {
-                            self.next_option();
-                        } else if self.selected_block == 0 {
-                            self.move_cursor_up();
-                        }
-                    }
-                    (_, KeyCode::Down) => {
-                        if self.selected_block == 3 {
-                            self.previous_option();
-                        } else if self.selected_block == 0 {
-                            self.move_cursor_down();
-                        }
                     }
                     (_, KeyCode::Char(c)) => {
                         if self.selected_block == 0 {
@@ -381,6 +425,7 @@ impl InGamePage {
         )))
         .await?
         .schema;
+
         self.result = match run_query(&self.input, &schema).await {
             Ok(rows) => {
                 if let Some(first_row) = rows.first() {
@@ -392,6 +437,7 @@ impl InGamePage {
                         .map(|col| col.name().to_string())
                         .collect();
 
+                    // Calculate column widths based on data
                     for row in &rows {
                         for col_idx in 0..num_columns {
                             let value = match row.try_get::<String, _>(col_idx) {
@@ -405,40 +451,47 @@ impl InGamePage {
                         }
                     }
 
-                    let mut result_string = String::new();
+                    // Build the formatted result string
+                    let header_line = column_names
+                        .iter()
+                        .zip(column_widths.iter())
+                        .map(|(name, &width)| format!("{:<width$} | ", name, width = width))
+                        .collect::<Vec<String>>()
+                        .join("");
+                    self.max_length_result = header_line.len() as u16 / 4;
+                    let separator_line = "-".repeat(header_line.len());
 
-                    for (i, width) in column_widths.iter().enumerate() {
-                        let header_name = &column_names[i];
-                        result_string.push_str(&format!(
-                            "{:<width$} | ",
-                            header_name,
-                            width = width
-                        ));
-                    }
-                    result_string.push_str("\n");
-                    result_string.push_str(&"-".repeat(result_string.len()));
-                    result_string.push_str("\n");
+                    let data_lines: Vec<String> = rows
+                        .iter()
+                        .map(|row| {
+                            column_widths
+                                .iter()
+                                .enumerate()
+                                .map(|(col_idx, &width)| {
+                                    let value = match row.try_get::<String, _>(col_idx) {
+                                        Ok(val) => val,
+                                        Err(_) => match row.try_get::<i32, _>(col_idx) {
+                                            Ok(val) => val.to_string(),
+                                            Err(_) => "NULL".to_string(),
+                                        },
+                                    };
+                                    format!("{:<width$} | ", value, width = width)
+                                })
+                                .collect::<Vec<String>>()
+                                .join("")
+                        })
+                        .collect();
 
-                    for row in rows {
-                        for (col_idx, width) in column_widths.iter().enumerate() {
-                            let value = match row.try_get::<String, _>(col_idx) {
-                                Ok(val) => val,
-                                Err(_) => match row.try_get::<i32, _>(col_idx) {
-                                    Ok(val) => val.to_string(),
-                                    Err(_) => "NULL".to_string(),
-                                },
-                            };
-                            result_string.push_str(&format!("{:<width$} | ", value, width = width));
-                        }
-                        result_string.push_str("\n");
-                    }
+                    // Combine header, separator, and data lines into final result
+                    let mut result_string = vec![header_line, separator_line];
+                    result_string.extend(data_lines);
 
-                    result_string
+                    result_string.join("\n")
                 } else {
                     "No rows returned".to_string()
                 }
             }
-            Err(err) => format!("Query failed: {:?}", err.to_string()),
+            Err(err) => format!("Query failed: {:?}", err),
         };
         Ok(())
     }
@@ -467,6 +520,13 @@ impl InGamePage {
             current_is_done: true,
             text_selected: false,
             clipboard: String::new(),
+            scroll_result_x: 0,
+            scroll_result_y: 0,
+            scroll_question_x: 0,
+            scroll_question_y: 0,
+            scroll_query_x: 0,
+            scroll_query_y: 0,
+            max_length_result: 0,
         }
     }
 
@@ -528,19 +588,50 @@ impl Widget for &InGamePage {
             result_and_features_area[0],
         ];
         let blocks = vec![
-            ("Query".to_string(), self.input.as_str(), Color::Red),
-            ("Question".to_string(), self.question.as_str(), Color::Green),
-            ("Result".to_string(), self.result.as_str(), Color::Blue),
+            (
+                "Query".to_string(),
+                self.input.as_str(),
+                Color::Red,
+                self.scroll_query_x,
+                self.scroll_query_y,
+            ),
+            (
+                "Question".to_string(),
+                self.question.as_str(),
+                Color::Green,
+                self.scroll_question_x,
+                self.scroll_question_y,
+            ),
+            (
+                "Result".to_string(),
+                self.result.as_str(),
+                Color::Blue,
+                self.scroll_result_x,
+                self.scroll_result_y,
+            ),
         ];
 
-        for (i, (chunk, (title, content, color))) in chunks.iter().zip(blocks.iter()).enumerate() {
+        for (i, (chunk, (title, content, color, x, y))) in
+            chunks.iter().zip(blocks.iter()).enumerate()
+        {
             let mut display_content = content.to_string();
             if i == 0 && self.selected_block == 0 {
                 // Insert cursor for the Query block when it's selected
                 if self.text_selected {
                     display_content = format!("\x1b[7m{}\x1b[0m", display_content);
                 } else {
-                    display_content.insert(self.cursor_position, '|');
+                    let valid_cursor_position = display_content
+                        .char_indices()
+                        .map(|(i, _)| i)
+                        .filter(|&i| i <= self.cursor_position)
+                        .last()
+                        .unwrap_or(0); // Default to 0 if no valid boundary is found
+
+                    // Split the string at the valid position
+                    let (before, after) = display_content.split_at(valid_cursor_position);
+
+                    // Insert the `|` symbol after the word (right of the cursor)
+                    display_content = format!("{}{}", before, format!("{}|", after));
                 }
             }
 
@@ -552,10 +643,21 @@ impl Widget for &InGamePage {
                 } else {
                     Style::default().fg(Color::White)
                 });
-            let paragraph = Paragraph::new(display_content)
-                .block(block)
-                .wrap(ratatui::widgets::Wrap { trim: true });
-            paragraph.render(*chunk, buf);
+
+            if title.as_str() == "Result" {
+                let paragraph = Paragraph::new(display_content)
+                    .block(block)
+                    .scroll((*x, *y));
+
+                paragraph.render(*chunk, buf);
+            } else {
+                let paragraph = Paragraph::new(display_content)
+                    .block(block)
+                    .scroll((*x, *y))
+                    .wrap(ratatui::widgets::Wrap { trim: true });
+
+                paragraph.render(*chunk, buf);
+            }
         }
 
         let items: Vec<ListItem> = self
