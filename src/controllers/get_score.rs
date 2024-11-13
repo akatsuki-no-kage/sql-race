@@ -9,8 +9,27 @@ fn is_row_equal(user_row: SqliteRow, answer_row: SqliteRow) -> bool {
     let column_count = user_row.len();
 
     (0..column_count).all(|column_index| {
-        user_row.try_get::<String, _>(column_index).unwrap()
-            == answer_row.try_get::<String, _>(column_index).unwrap()
+        let user_value = user_row
+            .try_get::<String, _>(column_index)
+            .map(|val| val)
+            .unwrap_or_else(|_| {
+                user_row
+                    .try_get::<i64, _>(column_index)
+                    .map(|val| val.to_string())
+                    // If both String and i64 fail, return a default (like "NULL")
+                    .unwrap_or_else(|_| "NULL".to_string())
+            });
+
+        let answer_value = answer_row
+            .try_get::<String, _>(column_index)
+            .map(|val| val)
+            .unwrap_or_else(|_| {
+                answer_row
+                    .try_get::<i64, _>(column_index)
+                    .map(|val| val.to_string())
+                    .unwrap_or_else(|_| "NULL".to_string())
+            });
+        user_value == answer_value
     })
 }
 
