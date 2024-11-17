@@ -1,22 +1,30 @@
 use anyhow::Result;
 use ratatui::{
+    crossterm::event,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     text::Text,
     widgets::{Block, Borders, Paragraph, Widget},
 };
 use sqlx::SqlitePool;
+use tui_textarea::{Input, Key};
 
-use super::components::{input::Input, ranking::Ranking};
+use crate::{
+    app::{App, AppState},
+    controllers::check_exist_username,
+    models::score::Score,
+};
+
+use super::components::{input::Input as UsernameInput, ranking::Ranking};
 
 #[derive(Default)]
-pub struct RankingPage {
+pub struct MenuPage {
     ranking: Ranking,
-    pub input: Input,
+    pub input: UsernameInput,
     pub error: Option<String>,
 }
 
-impl Widget for &RankingPage {
+impl Widget for &MenuPage {
     fn render(self, area: ratatui::prelude::Rect, buf: &mut ratatui::prelude::Buffer) {
         // Calculate the area for the input and error message
         let squarter_x = area.width / 4;
@@ -35,7 +43,7 @@ impl Widget for &RankingPage {
         self.ranking.render(layout_vertical[0], buf);
 
         // Centered input section
-        let input = Input::new("Search")
+        let input = UsernameInput::new("Search")
             .value(self.input.value.clone())
             .placeholder("Type to search...");
 
@@ -59,7 +67,7 @@ impl Widget for &RankingPage {
     }
 }
 
-impl RankingPage {
+impl MenuPage {
     pub async fn load_scores(&mut self, db: &SqlitePool) -> Result<()> {
         self.ranking = Ranking { scores: Vec::new() };
         self.ranking.get_sorted_scores(db).await?;
@@ -80,5 +88,46 @@ impl RankingPage {
 
     pub fn clear_error_message(&mut self) {
         self.error = None;
+    }
+
+    pub async fn handle_key_events(&mut self, app: &mut App) -> Result<()> {
+        // Handle input events for ranking page
+        match event::read()?.into() {
+            Input {
+                ctrl: true,
+                key: Key::Char('q'),
+                ..
+            } => {
+                app.exit = true;
+            }
+
+            Input {
+                key: Key::Backspace,
+                ..
+            } => {
+                if !self.input.value.is_empty() {
+                    self.input.value.pop();
+                }
+            }
+            Input {
+                key: Key::Enter, ..
+            } => {
+                if check_exist_username(&app.pool, self.input.value.clone()).await? {
+                    self.set_error_message("Username already exists!".to_string());
+                } else {
+                    app.username = self.input.value.clone();
+                    Score::insert(&app.pool, app.username.clone(), app.score).await?;
+                    app.state = AppState::InGame;
+                };
+            }
+            Input {
+                key: Key::Char(c), ..
+            } => {
+                self.update_input(format!("{}{}", self.input.value, c));
+            }
+            _ => {}
+        }
+
+        Ok(())
     }
 }
