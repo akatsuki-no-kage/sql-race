@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use anyhow::Result;
 use ratatui::{
     crossterm::event,
@@ -43,9 +45,9 @@ impl Widget for &MenuPage {
         self.ranking.render(layout_vertical[0], buf);
 
         // Centered input section
-        let input = UsernameInput::new("Search")
+        let input = UsernameInput::new("Enter name")
             .value(self.input.value.clone())
-            .placeholder("Type to search...");
+            .placeholder("Name");
 
         input.render(layout_vertical[1], buf);
 
@@ -92,6 +94,10 @@ impl MenuPage {
 
     pub async fn handle_key_events(&mut self, app: &mut App) -> Result<()> {
         // Handle input events for ranking page
+        let has_event = event::poll(Duration::from_millis(100))?;
+        if !has_event {
+            return Ok(());
+        }
         match event::read()?.into() {
             Input {
                 ctrl: true,

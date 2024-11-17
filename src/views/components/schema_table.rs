@@ -1,7 +1,7 @@
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::prelude::Widget;
-use ratatui::style::{Color, Style, Stylize};
+use ratatui::style::{Color, Style};
 use ratatui::widgets::{Block, Borders, Cell, Clear, Row as TuiRow, Table, Tabs};
 
 use crate::models::schema::{QuestionRow, QuestionTable};

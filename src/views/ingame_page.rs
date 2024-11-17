@@ -21,12 +21,12 @@ use tui_textarea::{CursorMove, Input, Key, TextArea};
 use super::components::schema_table::SchemaComponent;
 use super::components::table::TableComponent;
 
-const TIME: f32 = 100.0;
+const TIME: u64 = 100;
 
 pub struct InGamePage<'a> {
     query_textarea: TextArea<'a>,
     score: i64,
-    time_left: f32,
+    time_start: Instant,
     popup_visible: bool,
     tables_info: Vec<QuestionTable>,
     tab_idx: usize,
@@ -86,18 +86,12 @@ impl<'a> InGamePage<'a> {
     }
 
     pub fn update_states(&mut self, app: &mut App) {
-        if self.last_instant.elapsed() >= Duration::from_secs(1) {
-            self.time_left -= 1.0;
-            self.last_instant = Instant::now();
-        }
-
         if self.tab_idx >= self.tables_info.len() {
             self.tab_idx = 0;
         }
 
-        if self.time_left <= 0.0 {
+        if (Instant::now() - self.time_start).as_secs() > TIME {
             app.state = AppState::Menu;
-            self.time_left = TIME;
         }
 
         if self.selected_block == 0 {
@@ -127,6 +121,10 @@ impl<'a> InGamePage<'a> {
     }
 
     pub async fn handle_key_events(&mut self, app: &mut App) -> Result<()> {
+        let has_event = event::poll(Duration::from_millis(100))?;
+        if !has_event {
+            return Ok(());
+        }
         match event::read()?.into() {
             Input {
                 ctrl: true,
@@ -401,7 +399,7 @@ impl<'a> InGamePage<'a> {
             selected_block: 0,
             input: String::new(),
             cursor_position: 0,
-            time_left: TIME,
+            time_start: Instant::now(),
             popup_visible: false,
             tables_info: vec![],
             tab_idx: 0,
@@ -529,7 +527,8 @@ impl Widget for &InGamePage<'_> {
         let block_time_left = Block::default().title("Time left").borders(Borders::ALL);
         let block_hotkey_guide = Block::default().borders(Borders::ALL);
 
-        Paragraph::new(self.time_left.to_string())
+        let time_left = (Instant::now() - self.time_start).as_secs();
+        Paragraph::new(time_left.to_string())
             .centered()
             .block(block_time_left)
             .render(time_and_score_area[1], buf);
