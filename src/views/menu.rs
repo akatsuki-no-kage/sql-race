@@ -76,22 +76,6 @@ impl MenuPage {
         Ok(())
     }
 
-    pub fn update_input(&mut self, new_value: String) {
-        self.input.value = new_value;
-    }
-
-    pub fn clear_input(&mut self) {
-        self.input.value.clear();
-    }
-
-    pub fn set_error_message(&mut self, message: String) {
-        self.error = Some(message);
-    }
-
-    pub fn clear_error_message(&mut self) {
-        self.error = None;
-    }
-
     pub async fn handle_key_events(&mut self, app: &mut App) -> Result<()> {
         // Handle input events for ranking page
         let has_event = event::poll(Duration::from_millis(100))?;
@@ -119,7 +103,7 @@ impl MenuPage {
                 key: Key::Enter, ..
             } => {
                 if check_exist_username(&app.pool, self.input.value.clone()).await? {
-                    self.set_error_message("Username already exists!".to_string());
+                    self.error = "Username already exists!".to_string().into();
                 } else {
                     app.username = self.input.value.clone();
                     Score::insert(&app.pool, app.username.clone(), app.score).await?;
@@ -128,9 +112,7 @@ impl MenuPage {
             }
             Input {
                 key: Key::Char(c), ..
-            } => {
-                self.update_input(format!("{}{}", self.input.value, c));
-            }
+            } => self.input.value.push(c),
             _ => {}
         }
 
