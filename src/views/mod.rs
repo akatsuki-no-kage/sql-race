@@ -2,6 +2,8 @@ mod components;
 pub mod ingame_page;
 mod menu;
 
+use std::time::Instant;
+
 use anyhow::Result;
 use ingame_page::InGamePage;
 use menu::MenuPage;
@@ -30,6 +32,7 @@ pub async fn init(app: &mut App) -> Result<()> {
                 terminal.draw(|frame| {
                     frame.render_widget(&menu, frame.area());
                 })?;
+                ingame.time_start = Instant::now();
                 menu.handle_key_events(app).await?;
             }
         }
