@@ -21,7 +21,7 @@ use tui_textarea::{CursorMove, Input, Key, TextArea};
 use super::components::schema_table::SchemaComponent;
 use super::components::table::TableComponent;
 
-const TIME: u64 = 10;
+const TIME: u64 = 600;
 
 pub struct InGamePage<'a> {
     query_textarea: TextArea<'a>,
