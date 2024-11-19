@@ -22,6 +22,7 @@ use super::components::schema_table::SchemaComponent;
 use super::components::table::TableComponent;
 
 const TIME: u64 = 100;
+const BLOCK_COUNT: usize = 4;
 
 pub struct InGamePage<'a> {
     query_textarea: TextArea<'a>,
@@ -30,7 +31,6 @@ pub struct InGamePage<'a> {
     popup_visible: bool,
     tables_info: Vec<QuestionTable>,
     tab_idx: usize,
-    last_instant: Instant,
     input: String,
     cursor_position: usize,
     selected_block: usize,
@@ -41,17 +41,11 @@ pub struct InGamePage<'a> {
     result: Option<TableComponent>,
     schema_table: Option<SchemaComponent>,
     current_is_done: bool,
-    scroll_question_x: u16,
-    scroll_question_y: u16,
 }
 
 impl<'a> InGamePage<'a> {
     pub fn next_option(&mut self) {
-        if self.selected_option == 0 {
-            self.selected_option = self.options.len() - 1;
-        } else {
-            self.selected_option -= 1;
-        }
+        self.selected_option = (self.selected_option + self.options.len() - 1) % self.options.len();
     }
 
     pub fn previous_option(&mut self) {
@@ -59,30 +53,15 @@ impl<'a> InGamePage<'a> {
     }
 
     pub fn next_block(&mut self) {
-        self.selected_block = (self.selected_block + 1) % 4;
+        self.selected_block = (self.selected_block + 1) % BLOCK_COUNT;
     }
 
     pub fn previous_block(&mut self) {
-        if self.selected_block == 0 {
-            self.selected_block = 3;
-        } else {
-            self.selected_block -= 1;
-        }
+        self.selected_block = (self.selected_block + BLOCK_COUNT - 1) % BLOCK_COUNT;
     }
 
-    pub fn move_cursor_left(&mut self) {
-        self.query_textarea.move_cursor(CursorMove::Back);
-    }
-
-    pub fn move_cursor_right(&mut self) {
-        self.query_textarea.move_cursor(CursorMove::Forward);
-    }
-    pub fn move_cursor_up(&mut self) {
-        self.query_textarea.move_cursor(CursorMove::Up);
-    }
-
-    pub fn move_cursor_down(&mut self) {
-        self.query_textarea.move_cursor(CursorMove::Down);
+    pub fn move_cursor(&mut self, direction: CursorMove) {
+        self.query_textarea.move_cursor(direction);
     }
 
     pub fn update_states(&mut self, app: &mut App) {
@@ -207,7 +186,7 @@ impl<'a> InGamePage<'a> {
                 if self.selected_block == 3 {
                     self.next_option();
                 } else if self.selected_block == 0 {
-                    self.move_cursor_up();
+                    self.move_cursor(CursorMove::Up);
                 } else if self.selected_block == 2 {
                     match &mut self.result {
                         Some(table) => table.previous(),
@@ -219,7 +198,7 @@ impl<'a> InGamePage<'a> {
                 if self.selected_block == 3 {
                     self.previous_option();
                 } else if self.selected_block == 0 {
-                    self.move_cursor_down();
+                    self.move_cursor(CursorMove::Down);
                 } else if self.selected_block == 2 {
                     match &mut self.result {
                         Some(table) => table.next(),
@@ -238,7 +217,7 @@ impl<'a> InGamePage<'a> {
                         None => {}
                     }
                 } else if self.selected_block == 0 {
-                    self.move_cursor_left();
+                    self.move_cursor(CursorMove::Back);
                 }
             }
 
@@ -281,7 +260,7 @@ impl<'a> InGamePage<'a> {
                         None => {}
                     }
                 } else if self.selected_block == 0 {
-                    self.move_cursor_right();
+                    self.move_cursor(CursorMove::Forward);
                 }
             }
             Input {
@@ -390,38 +369,6 @@ impl<'a> InGamePage<'a> {
         Ok(())
     }
 
-    pub fn new() -> Self {
-        let mut query_textarea = TextArea::default();
-        query_textarea.set_block(Block::default().title("Query").borders(Borders::ALL));
-
-        Self {
-            query_textarea,
-            selected_block: 0,
-            input: String::new(),
-            cursor_position: 0,
-            time_start: Instant::now(),
-            popup_visible: false,
-            tables_info: vec![],
-            tab_idx: 0,
-            last_instant: Instant::now(),
-            question: String::new(),
-            question_idx: 0,
-            options: vec![
-                "Run (Ctrl + R)".to_string(),
-                "View Schema (Ctrl + H)".to_string(),
-                "Submit (Ctrl + S)".to_string(),
-                "Exit (Ctrl + Q)".to_string(),
-            ],
-            selected_option: 0,
-            score: 0,
-            result: Some(TableComponent::new(vec![])),
-            schema_table: None,
-            current_is_done: true,
-            scroll_question_x: 0,
-            scroll_question_y: 0,
-        }
-    }
-
     pub async fn update_question(&mut self) -> Result<()> {
         if self.current_is_done {
             self.question_idx += 1;
@@ -438,6 +385,37 @@ impl<'a> InGamePage<'a> {
         }
 
         Ok(())
+    }
+}
+
+impl<'a> Default for InGamePage<'a> {
+    fn default() -> Self {
+        let mut query_textarea = TextArea::default();
+        query_textarea.set_block(Block::default().title("Query").borders(Borders::ALL));
+
+        Self {
+            query_textarea,
+            selected_block: 0,
+            input: String::new(),
+            cursor_position: 0,
+            time_start: Instant::now(),
+            popup_visible: false,
+            tables_info: vec![],
+            tab_idx: 0,
+            question: String::new(),
+            question_idx: 0,
+            options: vec![
+                "Run (Ctrl + R)".to_string(),
+                "View Schema (Ctrl + H)".to_string(),
+                "Submit (Ctrl + S)".to_string(),
+                "Exit (Ctrl + Q)".to_string(),
+            ],
+            selected_option: 0,
+            score: 0,
+            result: Some(TableComponent::new(vec![])),
+            schema_table: None,
+            current_is_done: true,
+        }
     }
 }
 
