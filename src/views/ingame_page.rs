@@ -21,12 +21,12 @@ use tui_textarea::{CursorMove, Input, Key, TextArea};
 use super::components::schema_table::SchemaComponent;
 use super::components::table::TableComponent;
 
-const TIME: u64 = 100;
+const TIME: u64 = 600;
 
 pub struct InGamePage<'a> {
     query_textarea: TextArea<'a>,
     score: i64,
-    time_start: Instant,
+    pub time_start: Instant,
     popup_visible: bool,
     tables_info: Vec<QuestionTable>,
     tab_idx: usize,
@@ -543,14 +543,20 @@ impl Widget for &InGamePage<'_> {
             .block(block_hotkey_guide)
             .render(time_and_score_area[2], buf);
 
+        self.query_textarea.render(query_and_question_area[0], buf);
+        match &self.result {
+            Some(table) => table.render(result_and_features_area[0], buf),
+            None => {}
+        }
+
         if self.popup_visible {
             let popup_area = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints(
                     [
-                        Constraint::Percentage(30),
-                        Constraint::Percentage(40),
-                        Constraint::Percentage(30),
+                        Constraint::Percentage(20),
+                        Constraint::Percentage(60),
+                        Constraint::Percentage(20),
                     ]
                     .as_ref(),
                 )
@@ -569,19 +575,13 @@ impl Widget for &InGamePage<'_> {
                 .split(popup_area)[1]; // Centered horizontally
 
             // Clear the background
-            Clear.render(popup_area_horizontal, buf);
+            Clear.render(area, buf);
 
             // Render `SchemaComponent` as a popup
             match &self.schema_table {
                 Some(schema) => schema.render(popup_area_horizontal, buf),
                 None => {}
             }
-        }
-
-        self.query_textarea.render(query_and_question_area[0], buf);
-        match &self.result {
-            Some(table) => table.render(result_and_features_area[0], buf),
-            None => {}
         }
     }
 }
