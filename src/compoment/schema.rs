@@ -1,52 +1,25 @@
-use ratatui::buffer::Buffer;
-use ratatui::layout::{Constraint, Direction, Layout, Rect};
-use ratatui::prelude::Widget;
-use ratatui::style::{Color, Style};
-use ratatui::widgets::{Block, Borders, Cell, Clear, Row as TuiRow, Table, Tabs};
+use ratatui::{
+    layout::{Constraint, Direction, Layout},
+    style::{Color, Style},
+    widgets::{Block, Borders, Cell, Clear, Row, Table, Tabs, Widget},
+};
+use widgetui::State;
 
-use crate::models::schema::{QuestionRow, QuestionTable};
+use crate::model;
 
-pub struct SchemaComponent {
-    tables: Vec<QuestionTable>, // Each table corresponds to a tab
-    selected_index: usize,      // Index of the currently selected tab
-    is_focus: bool,
+#[derive(State)]
+pub struct SchemaState {
+    pub schemas: Vec<model::Schema>,
+    pub selected_index: usize,
 }
 
-impl SchemaComponent {
-    pub fn new(tables: Vec<QuestionTable>) -> Self {
-        Self {
-            tables,
-            selected_index: 0,
-            is_focus: false,
-        }
-    }
-
-    // Navigate to the next tab
-    pub fn next_tab(&mut self) {
-        if !self.tables.is_empty() {
-            self.selected_index = (self.selected_index + 1) % self.tables.len();
-        }
-    }
-
-    // Navigate to the previous tab
-    pub fn previous_tab(&mut self) {
-        if !self.tables.is_empty() {
-            if self.selected_index == 0 {
-                self.selected_index = self.tables.len() - 1;
-            } else {
-                self.selected_index -= 1;
-            }
-        }
-    }
-
-    pub fn set_focus(&mut self, focus: bool) {
-        self.is_focus = focus;
-    }
+pub struct Schema<'a> {
+    state: &'a SchemaState,
 }
 
-impl Widget for &SchemaComponent {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        if self.tables.is_empty() {
+impl Widget for Schema<'_> {
+    fn render(self, area: ratatui::prelude::Rect, buf: &mut ratatui::prelude::Buffer) {
+        if self.state.schemas.is_empty() {
             return; // No tables to render
         }
 
@@ -59,7 +32,12 @@ impl Widget for &SchemaComponent {
             .split(area);
 
         // Get tab labels for each table
-        let tab_labels: Vec<_> = self.tables.iter().map(|table| table.name.clone()).collect();
+        let tab_labels: Vec<_> = self
+            .state
+            .schemas
+            .iter()
+            .map(|table| table.name.clone())
+            .collect();
 
         // Define styling for the tabs to show focus and selected tab
         let tabs = Tabs::new(
@@ -68,19 +46,19 @@ impl Widget for &SchemaComponent {
                 .map(|title| title.into())
                 .collect::<Vec<String>>(),
         )
-        .select(self.selected_index)
-        .block(Block::default().title("Tables").borders(Borders::ALL))
-        .highlight_style(if self.is_focus {
-            Style::default().fg(Color::Green).bg(Color::Black)
-        } else {
-            Style::default().fg(Color::Gray).bg(Color::Black)
-        });
+        .select(self.state.selected_index)
+        .block(Block::default().title("Tables").borders(Borders::ALL));
+        // .highlight_style(if self.state.is_focus {
+        //     Style::default().fg(Color::Green).bg(Color::Black)
+        // } else {
+        //     Style::default().fg(Color::Gray).bg(Color::Black)
+        // });
 
         // Render the tabs at the top area
         tabs.render(layout[0], buf);
 
         // Get the selected table based on the current tab index
-        let current_table = &self.tables[self.selected_index];
+        let current_table = &self.state.schemas[self.state.selected_index];
 
         // Define header row for the table columns
         let headers = vec!["ID", "Name", "Type", "Not Null", "Default", "PK"];
@@ -88,18 +66,18 @@ impl Widget for &SchemaComponent {
             .iter()
             .map(|h| Cell::from(*h).style(Style::default().fg(Color::Yellow)))
             .collect();
-        let header_row = TuiRow::new(header_cells);
+        let header_row = Row::new(header_cells);
 
         // Define rows based on QuestionRow data within the selected QuestionTable
-        let data_rows: Vec<TuiRow> = current_table
-            .rows
+        let data_rows: Vec<_> = current_table
+            .columns
             .iter()
             .map(|row| {
                 let cells = vec![
-                    Cell::from(row.col_id.to_string()),
+                    Cell::from(row.id.to_string()),
                     Cell::from(row.name.clone()),
                     Cell::from(row.data_type.clone()),
-                    Cell::from(row.not_null.to_string()),
+                    Cell::from(row.is_nullable.to_string()),
                     Cell::from(
                         row.default_value
                             .clone()
@@ -107,19 +85,19 @@ impl Widget for &SchemaComponent {
                     ),
                     Cell::from(row.primary_key.to_string()),
                 ];
-                TuiRow::new(cells)
+                Row::new(cells)
             })
             .collect();
 
         // Define table block with focus styling
         let table_block = Block::default()
             .title(format!("Schema: {}", current_table.name))
-            .borders(Borders::ALL)
-            .border_style(if self.is_focus {
-                Style::default().fg(Color::Green)
-            } else {
-                Style::default().fg(Color::Gray)
-            });
+            .borders(Borders::ALL);
+        // .border_style(if self.is_focus {
+        //     Style::default().fg(Color::Green)
+        // } else {
+        //     Style::default().fg(Color::Gray)
+        // });
 
         // Set column widths
         let column_widths = vec![

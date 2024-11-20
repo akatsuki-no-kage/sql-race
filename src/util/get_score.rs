@@ -33,16 +33,17 @@ fn is_row_equal(user_row: SqliteRow, answer_row: SqliteRow) -> bool {
     })
 }
 
-pub async fn get_score(user_query: &str, answer_query: &str, schema: &str) -> Result<bool> {
+pub async fn get_score(user_query: &str, answer_query: &str, schema: &str) -> Result<u32> {
     let answer_rows = run_query(answer_query, schema).await?;
     let user_rows = run_query(user_query, schema).await?;
 
     if answer_rows.len() != user_rows.len() {
-        return Ok(false);
+        return Ok(0);
     }
 
-    Ok(user_rows
+    let is_all_match = user_rows
         .into_iter()
         .zip(answer_rows.into_iter())
-        .all(|(user_row, answer_row)| is_row_equal(user_row, answer_row)))
+        .all(|(user_row, answer_row)| is_row_equal(user_row, answer_row));
+    Ok(if is_all_match { 1 } else { 0 })
 }

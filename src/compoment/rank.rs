@@ -1,24 +1,35 @@
-use anyhow::Result;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style, Stylize},
     text::Text,
     widgets::{Block, Borders, Paragraph, Row, Table, Widget},
 };
-use sqlx::SqlitePool;
 
-use crate::models::score::Score;
+use crate::model::Score;
 
-#[derive(Default)]
-pub struct Ranking {
-    pub scores: Vec<Score>,
+fn text<'a>(content: String) -> Text<'a> {
+    Text::from(content.to_owned()).alignment(Alignment::Center)
 }
 
-impl Widget for &Ranking {
-    fn render(self, area: ratatui::prelude::Rect, buf: &mut ratatui::prelude::Buffer)
-    where
-        Self: Sized,
-    {
+impl Score {
+    fn into_row<'a>(&'a self) -> Row<'a> {
+        let row_content = [
+            self.username.clone(),
+            self.score.to_string(),
+            self.created_at.to_string(),
+        ];
+        let row = row_content.map(text);
+
+        Row::new(row)
+    }
+}
+
+pub struct Rank<'a> {
+    pub scores: &'a [Score],
+}
+
+impl Widget for Rank<'_> {
+    fn render(self, area: ratatui::prelude::Rect, buf: &mut ratatui::prelude::Buffer) {
         let header_height = Constraint::Percentage(5);
         let table_height = Constraint::Percentage(90);
 
@@ -34,23 +45,18 @@ impl Widget for &Ranking {
 
         let col_length = Constraint::Ratio(1, 3);
 
-        let rows: Vec<Row> = self
-            .scores
-            .clone()
-            .into_iter()
-            .map(|score| score_into_row(score))
-            .collect();
+        let rows: Vec<Row> = self.scores.iter().map(|score| score.into_row()).collect();
 
         let table_block = Block::default().borders(Borders::ALL);
         let table_body = Table::new(rows, vec![col_length, col_length, col_length])
             .header(Row::new(vec![
-                text("Username")
+                text("Username".to_string())
                     .add_modifier(Modifier::BOLD)
                     .style(Style::default().fg(Color::Yellow)),
-                text("Score")
+                text("Score".to_string())
                     .add_modifier(Modifier::BOLD)
                     .style(Style::default().fg(Color::Yellow)),
-                text("Time")
+                text("Time".to_string())
                     .add_modifier(Modifier::BOLD)
                     .style(Style::default().fg(Color::Yellow)),
             ]))
@@ -58,28 +64,5 @@ impl Widget for &Ranking {
 
         header.render(table_layout[0], buf);
         table_body.render(table_layout[1], buf);
-    }
-}
-
-fn text(content: &str) -> Text<'static> {
-    Text::from(content.to_owned()).alignment(Alignment::Center)
-}
-
-fn score_into_row(s: Score) -> Row<'static> {
-    Row::new(vec![
-        text(&s.username.clone()),
-        text(&s.score.to_string()),
-        text(&s.created_at.to_string()),
-    ])
-}
-
-impl Ranking {
-    pub async fn get_sorted_scores(&mut self, db: &SqlitePool) -> Result<()> {
-        let mut scores = Score::get_all(db).await?;
-        scores.sort_by(|score_prev, score_next| score_next.score.cmp(&score_prev.score));
-
-        self.scores = scores.clone();
-
-        Ok(())
     }
 }
