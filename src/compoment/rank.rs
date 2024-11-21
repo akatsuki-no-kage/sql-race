@@ -24,8 +24,16 @@ impl Score {
     }
 }
 
+#[derive(Default)]
 pub struct Rank<'a> {
-    pub scores: &'a [Score],
+    scores: &'a [Score],
+}
+
+impl<'a> Rank<'a> {
+    pub fn scores(mut self, scores: &'a [Score]) -> Self {
+        self.scores = scores;
+        self
+    }
 }
 
 impl Widget for Rank<'_> {
@@ -45,7 +53,7 @@ impl Widget for Rank<'_> {
 
         let col_length = Constraint::Ratio(1, 3);
 
-        let rows: Vec<Row> = self.scores.iter().map(|score| score.into_row()).collect();
+        let rows: Vec<_> = self.scores.iter().map(|score| score.into_row()).collect();
 
         let table_block = Block::default().borders(Borders::ALL);
         let table_body = Table::new(rows, vec![col_length, col_length, col_length])

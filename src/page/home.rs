@@ -101,10 +101,9 @@ impl Widget for Home<'_> {
             .split(Rect::new(squarter_x, 0, half_width, area.height));
 
         // Render ranking section
-        let rank_component = Rank {
-            scores: &self.state.scores,
-        };
-        rank_component.render(layout_vertical[0], buf);
+        Rank::default()
+            .scores(&self.state.scores)
+            .render(layout_vertical[0], buf);
 
         // Centered input section
         self.global_state.username.render(layout_vertical[1], buf);
