@@ -1,3 +1,5 @@
+pub mod component;
+
 use std::time::{Duration, Instant};
 
 use anyhow::Result;
@@ -20,7 +22,7 @@ const TIME_LIMIT: Duration = Duration::from_secs(100);
 pub struct InGameState {
     query: TextArea<'static>,
     score: usize,
-    time_start: Instant,
+    time_end: Instant,
     is_schema_table_visible: bool,
     focused_element: usize,
     question: Question,
@@ -34,7 +36,7 @@ impl InGameState {
         Ok(Self {
             query: Default::default(),
             score: Default::default(),
-            time_start: Instant::now(),
+            time_end: Instant::now() + TIME_LIMIT,
             is_schema_table_visible: Default::default(),
             focused_element: Default::default(),
             question: util::get_question(1).await?,
@@ -42,6 +44,10 @@ impl InGameState {
             execution_option: Default::default(),
             is_done: Default::default(),
         })
+    }
+
+    pub fn get_time_left(&self) -> Duration {
+        self.time_end.saturating_duration_since(Instant::now())
     }
 }
 
