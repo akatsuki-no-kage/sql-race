@@ -1,3 +1,5 @@
+use std::{thread::sleep, time::Duration};
+
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style, Stylize},
@@ -85,6 +87,8 @@ pub fn state_updater(
         .join()
         .unwrap()?;
     home_state.scores = scores;
+
+    sleep(Duration::from_millis(100));
 
     Ok(())
 }
