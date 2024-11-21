@@ -1,6 +1,5 @@
 #![feature(iterator_try_collect)]
 
-pub mod compoment;
 pub mod model;
 pub mod page;
 pub mod state;
@@ -10,13 +9,12 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use page::{
-    home::{self, component::*, Home},
+    home::{self, Home},
     in_game::{self, InGame},
 };
-use ratatui::crossterm::event::{Event, KeyCode, KeyEvent};
 use sqlx::SqlitePool;
 use state::{GlobalState, Screen};
-use widgetui::{App, Events, Res, ResMut, WidgetFrame, WidgetResult};
+use widgetui::{App, Res, ResMut, WidgetFrame, WidgetResult};
 
 fn render(
     mut frame: ResMut<WidgetFrame>,

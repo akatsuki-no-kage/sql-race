@@ -5,7 +5,6 @@ use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     widgets::Widget,
 };
-use tui_textarea::TextArea;
 use widgetui::{Events, Res, ResMut, State, WidgetResult};
 
 use crate::{
