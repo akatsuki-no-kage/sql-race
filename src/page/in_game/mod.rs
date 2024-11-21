@@ -1,12 +1,34 @@
+use std::time::{Duration, Instant};
+
 use ratatui::{
     crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers},
     widgets::{Paragraph, Widget},
 };
-use widgetui::{Events, Res, ResMut, WidgetResult};
+use tui_textarea::TextArea;
+use widgetui::{Events, Res, ResMut, State, WidgetResult};
 
-use crate::state::{GlobalState, Screen};
+use crate::{
+    model::Question,
+    state::{GlobalState, Screen},
+};
+
+const TIME_LIMIT: Duration = Duration::from_secs(100);
+
+#[derive(State)]
+pub struct InGameState {
+    query: TextArea<'static>,
+    score: usize,
+    time_start: Instant,
+    is_schema_table_visible: bool,
+    focused_element: usize,
+    question: Question,
+    question_index: usize,
+    execution_option: usize,
+    is_done: bool,
+}
 
 pub struct InGame<'a> {
+    pub in_game_state: Res<'a, InGameState>,
     pub global_state: Res<'a, GlobalState>,
 }
 
