@@ -71,11 +71,9 @@ pub fn handle_key(
             modifiers: KeyModifiers::NONE,
             ..
         }) => global_state.screen = Screen::InGame,
-        Event::Key(KeyEvent {
-            code: KeyCode::Char(c),
-            modifiers: KeyModifiers::NONE,
-            ..
-        }) => global_state.username.push(*c),
+        Event::Key(key_event) => {
+            global_state.username.input(*key_event);
+        }
         _ => {}
     }
 
@@ -109,13 +107,7 @@ impl Widget for Home<'_> {
         rank_component.render(layout_vertical[0], buf);
 
         // Centered input section
-        let input = Input {
-            title: "Enter name",
-            placeholder: "Name",
-            value: &self.global_state.username,
-        };
-
-        input.render(layout_vertical[1], buf);
+        self.global_state.username.render(layout_vertical[1], buf);
 
         // Render error message below input (centered)
         if let Some(ref message) = &self.state.error {

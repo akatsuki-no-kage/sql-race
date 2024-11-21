@@ -11,7 +11,7 @@ use std::sync::Arc;
 use anyhow::Result;
 use page::{
     home::{self, score_update, Home, HomeState},
-    in_game::InGame,
+    in_game::{self, InGame},
 };
 use ratatui::crossterm::event::{Event, KeyCode, KeyEvent};
 use sqlx::SqlitePool;
@@ -54,6 +54,7 @@ async fn main() -> Result<()> {
         .widgets(render)
         .widgets(score_update)
         .widgets(home::handle_key)
+        .widgets(in_game::handle_key)
         .run()?;
     Ok(())
 }
