@@ -3,9 +3,11 @@ pub mod component;
 use std::time::{Duration, Instant};
 
 use anyhow::Result;
+use component::{hotkey_guide::HotKeyGuild, query_input::QueryInput, score::Score, timer::Timer};
 use ratatui::{
     crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers},
-    widgets::{Paragraph, Widget},
+    layout::{Constraint, Direction, Layout},
+    widgets::Widget,
 };
 use tui_textarea::TextArea;
 use widgetui::{Events, Res, ResMut, State, WidgetResult};
@@ -18,7 +20,7 @@ use crate::{
 
 const TIME_LIMIT: Duration = Duration::from_secs(100);
 
-#[derive(State)]
+#[derive(Debug, State)]
 pub struct InGameState {
     query: TextArea<'static>,
     score: usize,
@@ -58,7 +60,46 @@ pub struct InGame<'a> {
 
 impl Widget for InGame<'_> {
     fn render(self, area: ratatui::prelude::Rect, buf: &mut ratatui::prelude::Buffer) {
-        Paragraph::new(self.global_state.username.lines().join("\n")).render(area, buf)
+        let main_area = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(
+                [
+                    Constraint::Percentage(7),
+                    Constraint::Percentage(68),
+                    Constraint::Percentage(25),
+                ]
+                .as_ref(),
+            )
+            .split(area);
+        let status_area = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(
+                [
+                    Constraint::Percentage(5),
+                    Constraint::Percentage(10),
+                    Constraint::Percentage(85),
+                ]
+                .as_ref(),
+            )
+            .split(main_area[0]);
+        let query_and_question_area = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(70), Constraint::Percentage(30)].as_ref())
+            .split(main_area[1]);
+        let result_and_features_area = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(70), Constraint::Percentage(30)].as_ref())
+            .split(main_area[2]);
+
+        let in_game_state = &self.in_game_state;
+
+        Score { in_game_state }.render(status_area[0], buf);
+
+        Timer { in_game_state }.render(status_area[1], buf);
+
+        HotKeyGuild {}.render(status_area[2], buf);
+
+        QueryInput { in_game_state }.render(query_and_question_area[0], buf);
     }
 }
 

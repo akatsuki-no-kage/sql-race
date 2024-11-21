@@ -63,6 +63,7 @@ async fn main() -> Result<()> {
         .widgets(home::component::rank::state_updater)
         .widgets(home::component::username_input::event_handler)
         .widgets(in_game::event_handler)
+        .widgets(in_game::component::query_input::event_handler)
         .run()?;
     Ok(())
 }
