@@ -4,7 +4,9 @@ use tokio::fs;
 
 use crate::model::Question;
 
-pub async fn get_question(question_dir: &Path) -> Result<Question> {
+pub async fn get_question(question_index: usize) -> Result<Question> {
+    let question_dir_path = format!("./questions/question-{}", question_index);
+    let question_dir = Path::new(&question_dir_path);
     anyhow::ensure!(
         question_dir.is_dir(),
         "Folder {:?} is not found!",

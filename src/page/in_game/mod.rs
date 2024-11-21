@@ -1,5 +1,6 @@
 use std::time::{Duration, Instant};
 
+use anyhow::Result;
 use ratatui::{
     crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers},
     widgets::{Paragraph, Widget},
@@ -10,6 +11,7 @@ use widgetui::{Events, Res, ResMut, State, WidgetResult};
 use crate::{
     model::Question,
     state::{GlobalState, Screen},
+    util,
 };
 
 const TIME_LIMIT: Duration = Duration::from_secs(100);
@@ -25,6 +27,22 @@ pub struct InGameState {
     question_index: usize,
     execution_option: usize,
     is_done: bool,
+}
+
+impl InGameState {
+    pub async fn default() -> Result<Self> {
+        Ok(Self {
+            query: Default::default(),
+            score: Default::default(),
+            time_start: Instant::now(),
+            is_schema_table_visible: Default::default(),
+            focused_element: Default::default(),
+            question: util::get_question(1).await?,
+            question_index: 1,
+            execution_option: Default::default(),
+            is_done: Default::default(),
+        })
+    }
 }
 
 pub struct InGame<'a> {
