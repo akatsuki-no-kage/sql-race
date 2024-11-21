@@ -37,4 +37,8 @@ impl GlobalState {
             screen: Default::default(),
         }
     }
+
+    pub fn get_username(&self) -> String {
+        self.username.lines().join("\n")
+    }
 }

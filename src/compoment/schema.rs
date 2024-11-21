@@ -3,23 +3,37 @@ use ratatui::{
     style::{Color, Style},
     widgets::{Block, Borders, Cell, Clear, Row, Table, Tabs, Widget},
 };
-use widgetui::State;
 
 use crate::model;
 
-#[derive(State)]
-pub struct SchemaState {
-    pub schemas: Vec<model::Schema>,
-    pub selected_index: usize,
+#[derive(Default)]
+pub struct Schema<'a> {
+    schemas: &'a [model::Schema],
+    selected_index: usize,
+
+    border_color: Color,
 }
 
-pub struct Schema<'a> {
-    state: &'a SchemaState,
+impl<'a> Schema<'a> {
+    pub fn schemas(mut self, schemas: &'a [model::Schema]) -> Self {
+        self.schemas = schemas;
+        self
+    }
+
+    pub fn selected_index(mut self, index: usize) -> Self {
+        self.selected_index = index;
+        self
+    }
+
+    pub fn border_color(mut self, color: Color) -> Self {
+        self.border_color = color;
+        self
+    }
 }
 
 impl Widget for Schema<'_> {
     fn render(self, area: ratatui::prelude::Rect, buf: &mut ratatui::prelude::Buffer) {
-        if self.state.schemas.is_empty() {
+        if self.schemas.is_empty() {
             return; // No tables to render
         }
 
@@ -33,7 +47,6 @@ impl Widget for Schema<'_> {
 
         // Get tab labels for each table
         let tab_labels: Vec<_> = self
-            .state
             .schemas
             .iter()
             .map(|table| table.name.clone())
@@ -46,22 +59,18 @@ impl Widget for Schema<'_> {
                 .map(|title| title.into())
                 .collect::<Vec<String>>(),
         )
-        .select(self.state.selected_index)
-        .block(Block::default().title("Tables").borders(Borders::ALL));
-        // .highlight_style(if self.state.is_focus {
-        //     Style::default().fg(Color::Green).bg(Color::Black)
-        // } else {
-        //     Style::default().fg(Color::Gray).bg(Color::Black)
-        // });
+        .select(self.selected_index)
+        .block(Block::default().title("Tables").borders(Borders::ALL))
+        .highlight_style(Style::default().fg(self.border_color).bg(Color::Black));
 
         // Render the tabs at the top area
         tabs.render(layout[0], buf);
 
         // Get the selected table based on the current tab index
-        let current_table = &self.state.schemas[self.state.selected_index];
+        let current_table = &self.schemas[self.selected_index.min(self.schemas.len() - 1)];
 
         // Define header row for the table columns
-        let headers = vec!["ID", "Name", "Type", "Not Null", "Default", "PK"];
+        let headers = ["ID", "Name", "Type", "Not Null", "Default", "PK"];
         let header_cells: Vec<Cell> = headers
             .iter()
             .map(|h| Cell::from(*h).style(Style::default().fg(Color::Yellow)))
@@ -92,12 +101,8 @@ impl Widget for Schema<'_> {
         // Define table block with focus styling
         let table_block = Block::default()
             .title(format!("Schema: {}", current_table.name))
-            .borders(Borders::ALL);
-        // .border_style(if self.is_focus {
-        //     Style::default().fg(Color::Green)
-        // } else {
-        //     Style::default().fg(Color::Gray)
-        // });
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(self.border_color));
 
         // Set column widths
         let column_widths = vec![

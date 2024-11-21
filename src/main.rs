@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use page::{
-    home::{self, score_update, Home, HomeState},
+    home::{self, component::*, Home},
     in_game::{self, InGame},
 };
 use ratatui::crossterm::event::{Event, KeyCode, KeyEvent};
@@ -21,7 +21,7 @@ use widgetui::{App, Events, Res, ResMut, WidgetFrame, WidgetResult};
 fn render(
     mut frame: ResMut<WidgetFrame>,
     global_state: Res<GlobalState>,
-    home_state: Res<HomeState>,
+    home_state: Res<home::HomeState>,
 ) -> WidgetResult {
     let area = frame.size();
 
@@ -30,7 +30,7 @@ fn render(
             frame.render_widget(
                 Home {
                     global_state,
-                    state: home_state,
+                    home_state,
                 },
                 area,
             );
@@ -46,15 +46,16 @@ fn render(
 async fn main() -> Result<()> {
     let pool = Arc::new(SqlitePool::connect("sqlite:score.db").await?);
     let global_state = GlobalState::new(pool.clone());
-    let home_state = HomeState::new(&pool.clone()).await?;
+    let home_state = home::HomeState::default();
 
     App::new(60)?
         .states(global_state)
         .states(home_state)
         .widgets(render)
-        .widgets(score_update)
-        .widgets(home::handle_key)
-        .widgets(in_game::handle_key)
+        .widgets(home::event_handler)
+        .widgets(home::component::rank::state_updater)
+        .widgets(home::component::username_input::event_handler)
+        .widgets(in_game::event_handler)
         .run()?;
     Ok(())
 }
