@@ -3,7 +3,10 @@ pub mod component;
 use std::time::{Duration, Instant};
 
 use anyhow::Result;
-use component::{hotkey_guide::HotKeyGuild, query_input::QueryInput, score::Score, timer::Timer};
+use component::{
+    hotkey_guide::HotKeyGuild, query_input::QueryInput, question::Question, score::Score,
+    timer::Timer,
+};
 use ratatui::{
     crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers},
     layout::{Constraint, Direction, Layout},
@@ -13,7 +16,7 @@ use tui_textarea::TextArea;
 use widgetui::{Events, Res, ResMut, State, WidgetResult};
 
 use crate::{
-    model::Question,
+    model,
     state::{GlobalState, Screen},
     util,
 };
@@ -27,7 +30,7 @@ pub struct InGameState {
     time_end: Instant,
     is_schema_table_visible: bool,
     focused_element: usize,
-    question: Question,
+    question: model::Question,
     question_index: usize,
     execution_option: usize,
     is_done: bool,
@@ -100,6 +103,8 @@ impl Widget for InGame<'_> {
         HotKeyGuild {}.render(status_area[2], buf);
 
         QueryInput { in_game_state }.render(query_and_question_area[0], buf);
+
+        Question { in_game_state }.render(query_and_question_area[1], buf);
     }
 }
 
