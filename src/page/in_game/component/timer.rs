@@ -7,7 +7,7 @@ use ratatui::{
 use crate::page::in_game::InGameState;
 
 pub struct Timer<'a> {
-    in_game_state: &'a InGameState,
+    pub in_game_state: &'a InGameState,
 }
 
 impl Widget for Timer<'_> {
