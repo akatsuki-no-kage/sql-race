@@ -3,13 +3,13 @@ use ratatui::{
     prelude::*,
     widgets::{Block, Borders, Paragraph},
 };
-use tokio::runtime::Handle;
 use widgetui::{Events, Res, ResMut, WidgetResult};
 
 use crate::{
     model::Score,
     page::{home::HomeState, in_game::InGameState},
     state::{GlobalState, Screen},
+    util,
 };
 
 pub struct UsernameInput<'a> {
@@ -72,15 +72,11 @@ pub fn event_handler(
             modifiers: KeyModifiers::NONE,
             ..
         }) => {
-            let handle = Handle::current();
             let pool = global_state.pool.clone();
 
             let username = global_state.get_username();
-            let is_user_existed = std::thread::spawn(move || {
-                handle.block_on(async { Score::is_user_existed(&username, &pool).await })
-            })
-            .join()
-            .unwrap()?;
+            let is_user_existed =
+                util::run_async(async move { Score::is_user_existed(&username, &pool).await })?;
 
             home_state.is_username_valid = !is_user_existed;
             if home_state.is_username_valid {

@@ -4,10 +4,9 @@ use ratatui::{
     text::Text,
     widgets::{Block, Borders, Paragraph, Row, Table, Widget},
 };
-use tokio::runtime::Handle;
 use widgetui::{Res, ResMut, WidgetResult};
 
-use crate::{model::Score, page::home::HomeState, state::GlobalState};
+use crate::{model::Score, page::home::HomeState, state::GlobalState, util};
 
 fn text<'a>(content: String) -> Text<'a> {
     Text::from(content.to_owned()).alignment(Alignment::Center)
@@ -78,12 +77,9 @@ pub fn state_updater(
     mut home_state: ResMut<HomeState>,
     global_state: Res<GlobalState>,
 ) -> WidgetResult {
-    let handle = Handle::current();
     let pool = global_state.pool.clone();
 
-    let scores = std::thread::spawn(move || handle.block_on(async { Score::get_all(&pool).await }))
-        .join()
-        .unwrap()?;
+    let scores = util::run_async(async move { Score::get_all(&pool).await })?;
     home_state.scores = scores;
 
     Ok(())

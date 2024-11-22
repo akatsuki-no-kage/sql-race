@@ -7,8 +7,7 @@ use ratatui::{
         StatefulWidget, Widget,
     },
 };
-use sqlx::{Column, Row as _};
-use widgetui::widget;
+use sqlx::Row as _;
 
 use crate::page::in_game::InGameState;
 
