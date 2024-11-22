@@ -1,3 +1,1 @@
-SELECT
-    first_name
-FROM patients;
+SELECT * FROM students;

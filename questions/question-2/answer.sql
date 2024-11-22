@@ -1,3 +1,1 @@
-SELECT
-    a,b,c
-FROM triangles;
+SELECT * FROM products WHERE price > 500;
