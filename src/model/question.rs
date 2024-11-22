@@ -49,6 +49,7 @@ impl Schema {
 pub struct Question {
     pub question: String,
     pub answer: String,
+    pub raw_schema: String,
     pub schemas: Vec<Schema>,
 }
 
@@ -76,6 +77,7 @@ impl Question {
         Ok(Question {
             question,
             answer,
+            raw_schema,
             schemas,
         })
     }

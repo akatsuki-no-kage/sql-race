@@ -2,7 +2,7 @@ pub mod component;
 
 use std::time::{Duration, Instant};
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use component::{
     action::Action, hotkey_guide::HotKeyGuild, query_input::QueryInput, question::Question,
     schema::Schema, score::Score, table::Table, timer::Timer,
@@ -14,6 +14,7 @@ use ratatui::{
     widgets::{ScrollbarState, TableState, Widget},
 };
 use sqlx::sqlite::SqliteRow;
+use sqlx::{Column, Row};
 use tui_textarea::TextArea;
 use widgetui::{Events, Res, ResMut, State, WidgetResult};
 
@@ -43,7 +44,6 @@ pub struct InGameState {
     schema_index: usize,
 }
 
-const QUESTION_COUNT: usize = 10;
 const COMPONENT_COUNT: usize = 4;
 
 impl InGameState {
@@ -100,16 +100,65 @@ impl InGameState {
         self.focused_element = (self.focused_element + COMPONENT_COUNT - 1) % COMPONENT_COUNT;
     }
 
-    pub fn run_query(&mut self) -> Result<()> {
-        Ok(())
+    fn get_query(&self) -> String {
+        self.query.lines().join("\n")
+    }
+
+    pub fn run_query(&mut self) {
+        let query = self.get_query();
+        let raw_schema = self.questions[self.question_index].raw_schema.clone();
+        match util::run_async(async move { util::run_query(&query, &raw_schema).await }) {
+            Ok(rows) => {
+                // HACK: use another way to get headers
+                self.table_headers = if let Some(row) = rows.first() {
+                    row.columns()
+                        .iter()
+                        .map(|col| col.name().to_string())
+                        .collect()
+                } else {
+                    vec![]
+                };
+                self.table_rows = Ok(rows);
+            }
+            Err(err) => self.table_rows = Err(err),
+        };
     }
 
     pub fn view_schema(&mut self) {
         self.is_popup_visible = true
     }
 
-    pub fn submit(&mut self) -> Result<()> {
-        Ok(())
+    pub fn next_question(&mut self) {
+        let question_count = self.questions.len();
+        self.question_index = (self.question_index + 1).min(question_count - 1);
+
+        self.query = Default::default();
+        self.score = (self.score + 1).min(question_count);
+        self.is_schema_table_visible = Default::default();
+        self.run_option = Default::default();
+        self.is_popup_visible = Default::default();
+        self.table_headers = Default::default();
+        self.table_rows = Ok(vec![]);
+        self.table_state = Default::default();
+        self.table_scroll_state = Default::default();
+        self.schema_index = Default::default();
+    }
+
+    pub fn submit(&mut self) {
+        let query = self.get_query();
+        let question = &self.questions[self.question_index];
+        let answer_query = question.answer.clone();
+        let raw_schema = question.raw_schema.clone();
+
+        match util::run_async(
+            async move { util::is_correct(&query, &answer_query, &raw_schema).await },
+        ) {
+            Ok(true) => self.next_question(),
+            Ok(false) => self.table_rows = Err(anyhow!("Wrong answer")),
+            Err(error) => {
+                self.table_rows = Err(error);
+            }
+        }
     }
 
     pub fn next_schema(&mut self) {
@@ -185,6 +234,26 @@ impl Widget for InGame<'_> {
     }
 }
 
+pub fn state_updater(
+    in_game_state: ResMut<InGameState>,
+    mut global_state: ResMut<GlobalState>,
+) -> WidgetResult {
+    if global_state.screen != Screen::InGame {
+        return Ok(());
+    }
+    if in_game_state.question_index == in_game_state.questions.len() - 1
+        || in_game_state.get_time_left() == Duration::ZERO
+    {
+        let username = global_state.get_username();
+        let score = in_game_state.score;
+        let pool = global_state.pool.clone();
+        util::run_async(async move { model::Score::insert(username, score as i64, &pool).await })?;
+        global_state.screen = Screen::Home;
+    }
+
+    Ok(())
+}
+
 pub fn event_handler(
     events: Res<Events>,
     mut in_game_state: ResMut<InGameState>,
@@ -215,10 +284,20 @@ pub fn event_handler(
             ..
         }) => in_game_state.focus_next(),
         Event::Key(KeyEvent {
+            code: KeyCode::Char('r'),
+            modifiers: KeyModifiers::CONTROL,
+            ..
+        }) => in_game_state.run_query(),
+        Event::Key(KeyEvent {
             code: KeyCode::Char('h'),
             modifiers: KeyModifiers::CONTROL,
             ..
         }) => in_game_state.view_schema(),
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('s'),
+            modifiers: KeyModifiers::CONTROL,
+            ..
+        }) => in_game_state.submit(),
         _ => {}
     }
 

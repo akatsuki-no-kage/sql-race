@@ -19,7 +19,6 @@ pub enum Screen {
 pub struct GlobalState {
     pub pool: Arc<SqlitePool>,
     pub username: TextArea<'static>,
-    pub score: u32,
     pub screen: Screen,
 }
 
@@ -33,7 +32,6 @@ impl GlobalState {
         Self {
             pool,
             username: text_area,
-            score: 0,
             screen: Default::default(),
         }
     }

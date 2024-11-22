@@ -1,5 +1,5 @@
 use ratatui::{
-    crossterm::event::{Event, KeyModifiers},
+    crossterm::event::Event,
     prelude::*,
     widgets::{Block, Borders},
 };
@@ -48,7 +48,7 @@ pub fn event_handler(
     };
 
     match event {
-        Event::Key(key_event) if key_event.modifiers == KeyModifiers::NONE => {
+        Event::Key(key_event) => {
             in_game_state.query.input(*key_event);
         }
         _ => {}

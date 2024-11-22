@@ -1,5 +1,6 @@
 use ratatui::{
     buffer::Buffer,
+    crossterm::event::{Event, KeyCode, KeyEvent},
     layout::{Constraint, Rect},
     style::{Color, Style, Stylize},
     widgets::{
@@ -8,8 +9,12 @@ use ratatui::{
     },
 };
 use sqlx::Row as _;
+use widgetui::{Events, Res, ResMut, WidgetResult};
 
-use crate::page::in_game::InGameState;
+use crate::{
+    page::in_game::InGameState,
+    state::{GlobalState, Screen},
+};
 
 const ID: usize = 2;
 
@@ -115,4 +120,45 @@ impl Widget for Table<'_> {
             }
         }
     }
+}
+
+pub fn event_handler(
+    events: Res<Events>,
+    mut in_game_state: ResMut<InGameState>,
+    global_state: Res<GlobalState>,
+) -> WidgetResult {
+    if global_state.screen != Screen::InGame || in_game_state.focused_element != ID {
+        return Ok(());
+    }
+
+    let Some(event) = &events.event else {
+        return Ok(());
+    };
+
+    match event {
+        Event::Key(KeyEvent {
+            code: KeyCode::Down,
+            ..
+        }) => {
+            if let Ok(ref rows) = in_game_state.table_rows {
+                let length = rows.len();
+                let i = (in_game_state.table_state.selected().unwrap_or(length - 1) + 1) % length;
+                in_game_state.table_state.select(Some(i));
+                in_game_state.table_scroll_state = in_game_state.table_scroll_state.position(i);
+            }
+        }
+        Event::Key(KeyEvent {
+            code: KeyCode::Up, ..
+        }) => {
+            if let Ok(ref rows) = in_game_state.table_rows {
+                let length = rows.len();
+                let i = (in_game_state.table_state.selected().unwrap_or(1) + length - 1) % length;
+                in_game_state.table_state.select(Some(i));
+                in_game_state.table_scroll_state = in_game_state.table_scroll_state.position(i);
+            }
+        }
+        _ => {}
+    }
+
+    Ok(())
 }

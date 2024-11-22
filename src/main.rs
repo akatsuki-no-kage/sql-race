@@ -51,7 +51,7 @@ fn render(
 async fn main() -> Result<()> {
     let pool = Arc::new(SqlitePool::connect("sqlite:score.db").await?);
     let global_state = GlobalState::new(pool.clone());
-    let home_state = home::HomeState::default();
+    let home_state = HomeState::default();
     let in_game_state = InGameState::default().await?;
 
     App::new(60)?
@@ -63,9 +63,11 @@ async fn main() -> Result<()> {
         .widgets(home::component::rank::state_updater)
         .widgets(home::component::username_input::event_handler)
         .widgets(in_game::event_handler)
+        .widgets(in_game::state_updater)
         .widgets(in_game::component::query_input::event_handler)
         .widgets(in_game::component::action::event_handler)
         .widgets(in_game::component::schema::event_handler)
+        .widgets(in_game::component::table::event_handler)
         .run()?;
     Ok(())
 }

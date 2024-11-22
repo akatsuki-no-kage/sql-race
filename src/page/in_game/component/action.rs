@@ -118,9 +118,9 @@ pub fn event_handler(
             modifiers: KeyModifiers::NONE,
             ..
         }) => match ACTIONS[in_game_state.run_option] {
-            ActionType::Run => in_game_state.run_query()?,
+            ActionType::Run => in_game_state.run_query(),
             ActionType::ViewSchema => in_game_state.view_schema(),
-            ActionType::Submit => in_game_state.submit()?,
+            ActionType::Submit => in_game_state.submit(),
             ActionType::Exit => events.register_exit(),
         },
         _ => {}

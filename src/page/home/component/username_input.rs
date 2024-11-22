@@ -84,7 +84,7 @@ pub fn event_handler(
                 in_game_state.reset();
             }
         }
-        Event::Key(key_event) if key_event.modifiers == KeyModifiers::NONE => {
+        Event::Key(key_event) => {
             global_state.username.input(*key_event);
         }
         _ => {}
