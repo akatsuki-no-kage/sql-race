@@ -1,3 +1,1 @@
-SELECT COUNT(*) AS total_patients
-FROM patients
-WHERE YEAR(birth_date) = 1980;
+SELECT SUM(amount) AS total_sales FROM sales;
