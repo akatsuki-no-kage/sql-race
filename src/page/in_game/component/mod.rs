@@ -6,4 +6,5 @@ pub mod hotkey_guide;
 pub mod question;
 pub mod action;
 pub mod table;
+pub mod schema;
 

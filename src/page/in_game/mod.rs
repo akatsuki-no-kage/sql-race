@@ -5,7 +5,7 @@ use std::time::{Duration, Instant};
 use anyhow::Result;
 use component::{
     action::Action, hotkey_guide::HotKeyGuild, query_input::QueryInput, question::Question,
-    score::Score, table::Table, timer::Timer,
+    schema::Schema, score::Score, table::Table, timer::Timer,
 };
 use futures::{stream::FuturesOrdered, TryStreamExt};
 use ratatui::{
@@ -40,6 +40,7 @@ pub struct InGameState {
     table_rows: Result<Vec<SqliteRow>>,
     table_state: TableState,
     table_scroll_state: ScrollbarState,
+    schema_index: usize,
 }
 
 const QUESTION_COUNT: usize = 10;
@@ -67,6 +68,7 @@ impl InGameState {
             table_rows: Ok(vec![]),
             table_state: Default::default(),
             table_scroll_state: Default::default(),
+            schema_index: Default::default(),
         })
     }
 
@@ -83,6 +85,7 @@ impl InGameState {
         self.table_rows = Ok(vec![]);
         self.table_state = Default::default();
         self.table_scroll_state = Default::default();
+        self.schema_index = Default::default();
     }
 
     pub fn get_time_left(&self) -> Duration {
@@ -108,6 +111,16 @@ impl InGameState {
     pub fn submit(&mut self) -> Result<()> {
         Ok(())
     }
+
+    pub fn next_schema(&mut self) {
+        let schema_count = self.questions[self.question_index].schemas.len();
+        self.schema_index = (self.schema_index + 1) % schema_count;
+    }
+
+    pub fn previous_schema(&mut self) {
+        let schema_count = self.questions[self.question_index].schemas.len();
+        self.schema_index = (self.schema_index + schema_count - 1) % schema_count;
+    }
 }
 
 pub struct InGame<'a> {
@@ -117,6 +130,12 @@ pub struct InGame<'a> {
 
 impl Widget for InGame<'_> {
     fn render(mut self, area: ratatui::prelude::Rect, buf: &mut ratatui::prelude::Buffer) {
+        if self.in_game_state.is_popup_visible {
+            let in_game_state = &self.in_game_state;
+            Schema { in_game_state }.render(area, buf);
+            return;
+        }
+
         let main_area = Layout::default()
             .direction(Direction::Vertical)
             .constraints(
@@ -171,7 +190,7 @@ pub fn event_handler(
     mut in_game_state: ResMut<InGameState>,
     mut global_state: ResMut<GlobalState>,
 ) -> WidgetResult {
-    if global_state.screen != Screen::InGame {
+    if global_state.screen != Screen::InGame || in_game_state.is_popup_visible {
         return Ok(());
     }
 
@@ -195,6 +214,11 @@ pub fn event_handler(
             modifiers: KeyModifiers::CONTROL,
             ..
         }) => in_game_state.focus_next(),
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('h'),
+            modifiers: KeyModifiers::CONTROL,
+            ..
+        }) => in_game_state.view_schema(),
         _ => {}
     }
 

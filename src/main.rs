@@ -65,6 +65,7 @@ async fn main() -> Result<()> {
         .widgets(in_game::event_handler)
         .widgets(in_game::component::query_input::event_handler)
         .widgets(in_game::component::action::event_handler)
+        .widgets(in_game::component::schema::event_handler)
         .run()?;
     Ok(())
 }
