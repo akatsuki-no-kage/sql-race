@@ -20,7 +20,7 @@ fn render(
     mut frame: ResMut<WidgetFrame>,
     global_state: Res<GlobalState>,
     home_state: Res<HomeState>,
-    in_game_state: Res<InGameState>,
+    in_game_state: ResMut<InGameState>,
 ) -> WidgetResult {
     let area = frame.size();
 
@@ -64,6 +64,7 @@ async fn main() -> Result<()> {
         .widgets(home::component::username_input::event_handler)
         .widgets(in_game::event_handler)
         .widgets(in_game::component::query_input::event_handler)
+        .widgets(in_game::component::action::event_handler)
         .run()?;
     Ok(())
 }

@@ -8,7 +8,7 @@ use widgetui::{Events, Res, ResMut, WidgetResult};
 
 use crate::{
     model::Score,
-    page::home::HomeState,
+    page::{home::HomeState, in_game::InGameState},
     state::{GlobalState, Screen},
 };
 
@@ -55,6 +55,7 @@ impl Widget for UsernameInput<'_> {
 pub fn event_handler(
     events: Res<Events>,
     mut home_state: ResMut<HomeState>,
+    mut in_game_state: ResMut<InGameState>,
     mut global_state: ResMut<GlobalState>,
 ) -> WidgetResult {
     if global_state.screen != Screen::Home {
@@ -84,6 +85,7 @@ pub fn event_handler(
             home_state.is_username_valid = !is_user_existed;
             if home_state.is_username_valid {
                 global_state.screen = Screen::InGame;
+                in_game_state.reset();
             }
         }
         Event::Key(key_event) if key_event.modifiers == KeyModifiers::NONE => {
