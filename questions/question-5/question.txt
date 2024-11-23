@@ -2,4 +2,5 @@ Question 5: Find the total sales amount.
 
 Hint: The SUM() function calculates the total of a numeric column.
       Use it in the SELECT clause.
+      Return total_sales.
 

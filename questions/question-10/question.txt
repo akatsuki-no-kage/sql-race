@@ -2,4 +2,3 @@ Question 10: Retrieve article titles along with their authors' names.
 
 Hint: Use the JOIN clause to combine rows from two tables.
       Match them using a common column (e.g., author_id).
-

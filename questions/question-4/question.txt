@@ -1,3 +1,5 @@
 Question 4: Count the total number of cities.
 
-Hint: Use the COUNT() function to count the number of rows in the table.
+Hint: 
+	Use the COUNT() function to count the number of rows in the table.
+	Return total_cities.

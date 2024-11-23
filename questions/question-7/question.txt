@@ -1,3 +1,5 @@
 Question 7: Find the total salary for each department.
 
-Hint: Use the GROUP BY clause to group rows by a specific column and aggregate values using functions like SUM().
+Hint:
+	Use the GROUP BY clause to group rows by a specific column and aggregate values using functions like SUM().
+	Return total_salary.
