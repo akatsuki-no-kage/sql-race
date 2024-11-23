@@ -422,7 +422,7 @@ impl<'a> InGamePage<'a> {
         }
     }
 
-    pub async fn update_question(&mut self) -> Result<()> {
+    pub async fn update_question(&mut self, app: &mut App) -> Result<()> {
         if self.current_is_done {
             self.question_idx += 1;
             let current_question_path = format!("./questions/question-{}", self.question_idx);
@@ -432,7 +432,7 @@ impl<'a> InGamePage<'a> {
                     self.current_is_done = false;
                 }
                 Err(_) => {
-                    self.result = Some(TableComponent::new(vec![]));
+                    app.state = AppState::Menu;
                 }
             };
         }

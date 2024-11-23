@@ -22,7 +22,7 @@ pub async fn init(app: &mut App) -> Result<()> {
         match app.state {
             AppState::InGame => {
                 ingame.update_states(app);
-                ingame.update_question().await?;
+                ingame.update_question(app).await?;
                 terminal.draw(|frame| {
                     frame.render_widget(&ingame, frame.area());
                 })?;
