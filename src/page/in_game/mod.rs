@@ -339,10 +339,12 @@ pub fn event_handler(
 
 #[set]
 pub fn InGameSet(app: App) -> App {
-    app.widgets(chunk_generator)
+    app.states(timer::CustomState::default())
+        .widgets(chunk_generator)
         .widgets(event_handler)
         .widgets(state_updater)
         .widgets(hotkey_guide::render)
+        .widgets(timer::render)
         .widgets(component::query_input::event_handler)
         .widgets(component::action::event_handler)
         .widgets(component::schema::event_handler)
