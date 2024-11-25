@@ -1,7 +1,10 @@
 pub mod component;
 
-use component::{action, hotkey_guide, query_input, question, score, table, timer};
-use ratatui::layout::{Constraint, Direction, Layout};
+use component::{action, hotkey_guide, query_input, question, schema, score, table, timer};
+use ratatui::{
+    crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers},
+    layout::{Constraint, Direction, Layout},
+};
 use widgetui::{
     constraint, layout, set, App, Chunks, Events, Res, ResMut, Set, State, WidgetFrame,
     WidgetResult,
@@ -69,50 +72,51 @@ pub fn chunk_generator(frame: Res<WidgetFrame>, mut chunks: ResMut<Chunks>) -> W
 
 pub fn event_handler(
     events: Res<Events>,
-    mut in_game_state: ResMut<FocusState>,
+    mut focus_state: ResMut<FocusState>,
+    schema_state: Res<schema::CustomState>,
     mut global_state: ResMut<GlobalState>,
 ) -> WidgetResult {
-    // if global_state.screen != Screen::InGame || in_game_state.is_popup_visible {
-    //     return Ok(());
-    // }
-    //
-    // let Some(event) = &events.event else {
-    //     return Ok(());
-    // };
-    //
-    // match event {
-    //     Event::Key(KeyEvent {
-    //         code: KeyCode::Char('q'),
-    //         modifiers: KeyModifiers::CONTROL,
-    //         ..
-    //     }) => global_state.screen = Screen::Home,
-    //     Event::Key(KeyEvent {
-    //         code: KeyCode::Left,
-    //         modifiers: KeyModifiers::CONTROL,
-    //         ..
-    //     }) => in_game_state.focus_previous(),
-    //     Event::Key(KeyEvent {
-    //         code: KeyCode::Right,
-    //         modifiers: KeyModifiers::CONTROL,
-    //         ..
-    //     }) => in_game_state.focus_next(),
-    //     Event::Key(KeyEvent {
-    //         code: KeyCode::Char('r'),
-    //         modifiers: KeyModifiers::CONTROL,
-    //         ..
-    //     }) => in_game_state.run_query(),
-    //     Event::Key(KeyEvent {
-    //         code: KeyCode::Char('h'),
-    //         modifiers: KeyModifiers::CONTROL,
-    //         ..
-    //     }) => in_game_state.view_schema(),
-    //     Event::Key(KeyEvent {
-    //         code: KeyCode::Char('s'),
-    //         modifiers: KeyModifiers::CONTROL,
-    //         ..
-    //     }) => in_game_state.submit(),
-    //     _ => {}
-    // }
+    if global_state.screen != Screen::InGame || schema_state.is_visible {
+        return Ok(());
+    }
+
+    let Some(event) = &events.event else {
+        return Ok(());
+    };
+
+    match event {
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('q'),
+            modifiers: KeyModifiers::CONTROL,
+            ..
+        }) => global_state.screen = Screen::Home,
+        Event::Key(KeyEvent {
+            code: KeyCode::Left,
+            modifiers: KeyModifiers::CONTROL,
+            ..
+        }) => focus_state.prev(),
+        Event::Key(KeyEvent {
+            code: KeyCode::Right,
+            modifiers: KeyModifiers::CONTROL,
+            ..
+        }) => focus_state.next(),
+        // Event::Key(KeyEvent {
+        //     code: KeyCode::Char('r'),
+        //     modifiers: KeyModifiers::CONTROL,
+        //     ..
+        // }) => in_game_state.run_query(),
+        // Event::Key(KeyEvent {
+        //     code: KeyCode::Char('h'),
+        //     modifiers: KeyModifiers::CONTROL,
+        //     ..
+        // }) => in_game_state.view_schema(),
+        // Event::Key(KeyEvent {
+        //     code: KeyCode::Char('s'),
+        //     modifiers: KeyModifiers::CONTROL,
+        //     ..
+        // }) => in_game_state.submit(),
+        _ => {}
+    }
 
     Ok(())
 }
@@ -127,6 +131,7 @@ pub fn InGameSet(app: App) -> App {
         question::CustomState::default(),
         table::CustomState::default(),
         action::CustomState::default(),
+        schema::CustomState::default(),
     ))
     .widgets((
         chunk_generator,

@@ -1,3 +1,4 @@
+use futures::{stream::FuturesOrdered, TryStreamExt};
 use ratatui::{
     style::{Color, Style},
     text::Text,
@@ -9,16 +10,35 @@ use crate::{
     model::Question,
     page::in_game::FocusState,
     state::{GlobalState, Screen},
+    util,
 };
 
 pub struct Chunk;
 
 const ID: usize = 1;
+const QUESTION_COUNT: usize = 10;
 
-#[derive(Default, State)]
+#[derive(State)]
 pub struct CustomState {
     pub questions: Vec<Question>,
     pub selected_question: usize,
+}
+
+impl Default for CustomState {
+    fn default() -> Self {
+        let questions: Vec<_> = util::run_async(async {
+            (1..=QUESTION_COUNT)
+                .map(util::get_question)
+                .collect::<FuturesOrdered<_>>()
+                .try_collect()
+                .await
+                .unwrap()
+        });
+        Self {
+            questions,
+            selected_question: Default::default(),
+        }
+    }
 }
 
 impl CustomState {
@@ -36,7 +56,7 @@ pub fn render(
     mut frame: ResMut<WidgetFrame>,
     chunks: Res<Chunks>,
     state: Res<CustomState>,
-    in_game_state: Res<FocusState>,
+    focus_state: Res<FocusState>,
     global_state: Res<GlobalState>,
 ) -> WidgetResult {
     if global_state.screen != Screen::InGame {
@@ -45,7 +65,7 @@ pub fn render(
 
     let chunk = chunks.get_chunk::<Chunk>()?;
 
-    let border_color = if in_game_state.focused_element == ID {
+    let border_color = if focus_state.focused_element == ID {
         Color::Green
     } else {
         Color::White

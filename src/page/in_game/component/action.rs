@@ -60,7 +60,7 @@ pub fn render(
     mut frame: ResMut<WidgetFrame>,
     chunks: Res<Chunks>,
     state: Res<CustomState>,
-    in_game_state: Res<FocusState>,
+    focus_state: Res<FocusState>,
     global_state: Res<GlobalState>,
 ) -> WidgetResult {
     if global_state.screen != Screen::InGame {
@@ -85,7 +85,7 @@ pub fn render(
         Block::default()
             .title("Options")
             .borders(Borders::ALL)
-            .border_style(Style::default().fg(if in_game_state.focused_element != ID {
+            .border_style(Style::default().fg(if focus_state.focused_element != ID {
                 Color::White
             } else {
                 Color::Green
@@ -97,12 +97,12 @@ pub fn render(
 }
 
 pub fn event_handler(
-    mut events: ResMut<Events>,
+    events: ResMut<Events>,
     mut state: ResMut<CustomState>,
-    in_game_state: Res<FocusState>,
+    focus_state: Res<FocusState>,
     global_state: Res<GlobalState>,
 ) -> WidgetResult {
-    if global_state.screen != Screen::InGame || in_game_state.focused_element != ID {
+    if global_state.screen != Screen::InGame || focus_state.focused_element != ID {
         return Ok(());
     }
 

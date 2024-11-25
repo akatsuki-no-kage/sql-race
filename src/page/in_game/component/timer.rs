@@ -63,7 +63,7 @@ pub fn state_updater(
     mut global_state: ResMut<GlobalState>,
 ) -> WidgetResult {
     if state.get_time_left() == Duration::ZERO {
-        finish_game(&username_input_state, &score_state, &mut global_state);
+        finish_game(&username_input_state, &score_state, &mut global_state)?;
     }
 
     Ok(())

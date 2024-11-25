@@ -8,7 +8,6 @@ use widgetui::{Chunks, Events, Res, ResMut, State, WidgetFrame, WidgetResult};
 
 use crate::{
     model::Score,
-    page::in_game::FocusState,
     state::{GlobalState, Screen},
     util,
 };
@@ -86,10 +85,9 @@ pub fn render(
 }
 
 pub fn event_handler(
-    events: Res<Events>,
+    mut events: ResMut<Events>,
     mut state: ResMut<CustomState>,
     mut global_state: ResMut<GlobalState>,
-    mut in_game_state: ResMut<FocusState>,
 ) -> WidgetResult {
     if global_state.screen != Screen::Home {
         return Ok(());
@@ -117,6 +115,7 @@ pub fn event_handler(
                 // TODO: make reset function
                 // in_game_state.reset();
             }
+            events.event = None;
         }
         Event::Key(key_event) => {
             state.username.input(*key_event);

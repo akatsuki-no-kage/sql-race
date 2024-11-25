@@ -12,8 +12,8 @@ use super::question;
 
 #[derive(Default, State)]
 pub struct CustomState {
-    is_visible: bool,
-    selected_schema: usize,
+    pub is_visible: bool,
+    pub selected_schema: usize,
 }
 
 impl CustomState {

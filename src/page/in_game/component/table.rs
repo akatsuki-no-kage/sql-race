@@ -49,7 +49,7 @@ impl CustomState {
     fn next(&mut self) {
         if let Some(i) = self._next() {
             self.inner_state.select(Some(i));
-            self.table_scroll_state.position(i);
+            self.table_scroll_state = self.table_scroll_state.position(i);
         }
     }
 
@@ -66,7 +66,7 @@ impl CustomState {
     fn prev(&mut self) {
         if let Some(i) = self._prev() {
             self.inner_state.select(Some(i));
-            self.table_scroll_state.position(i);
+            self.table_scroll_state = self.table_scroll_state.position(i);
         }
     }
 }
@@ -85,7 +85,7 @@ fn render_table(
     frame: &mut WidgetFrame,
     chunk: Rect,
     state: &CustomState,
-    in_game_state: &FocusState,
+    focus_state: &FocusState,
 ) -> WidgetResult {
     let headers = &state.table_headers;
     let header_count = headers.len();
@@ -115,7 +115,7 @@ fn render_table(
         .collect();
 
     let column_widths = vec![Constraint::Length(10); header_count];
-    let table_block = if in_game_state.focused_element == ID {
+    let table_block = if focus_state.focused_element == ID {
         Block::default()
             .title("Query Result (↑↓ to scroll)")
             .borders(Borders::ALL)
@@ -170,7 +170,7 @@ pub fn render(
     mut frame: ResMut<WidgetFrame>,
     chunks: Res<Chunks>,
     state: Res<CustomState>,
-    in_game_state: Res<FocusState>,
+    focus_state: Res<FocusState>,
     global_state: Res<GlobalState>,
 ) -> WidgetResult {
     if global_state.screen != Screen::InGame {
@@ -181,17 +181,17 @@ pub fn render(
 
     match &state.table_rows {
         Err(error) => render_error(error.to_string(), &mut frame, chunk),
-        Ok(rows) => render_table(rows, &mut frame, chunk, &state, &in_game_state),
+        Ok(rows) => render_table(rows, &mut frame, chunk, &state, &focus_state),
     }
 }
 
 pub fn event_handler(
     events: Res<Events>,
     mut state: ResMut<CustomState>,
-    in_game_state: Res<FocusState>,
+    focus_state: Res<FocusState>,
     global_state: Res<GlobalState>,
 ) -> WidgetResult {
-    if global_state.screen != Screen::InGame || in_game_state.focused_element != ID {
+    if global_state.screen != Screen::InGame || focus_state.focused_element != ID {
         return Ok(());
     }
 
