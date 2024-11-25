@@ -12,12 +12,24 @@ use crate::{
     util,
 };
 
-pub struct Chunk;
-
 #[derive(State, Default)]
 pub struct CustomState {
     pub scores: Vec<Score>,
 }
+
+pub fn state_updater(
+    mut state: ResMut<CustomState>,
+    global_state: Res<GlobalState>,
+) -> WidgetResult {
+    let pool = global_state.pool.clone();
+
+    let scores = util::run_async(async move { Score::get_all(&pool).await })?;
+    state.scores = scores;
+
+    Ok(())
+}
+
+pub struct Chunk;
 
 fn into_row<'a, const N: usize>(data: [String; N]) -> Row<'a> {
     Row::new(data.map(|content| Text::from(content).alignment(Alignment::Center)))
@@ -68,18 +80,6 @@ pub fn render(
 
     frame.render_widget(header, sub_chunks[0][0]);
     frame.render_widget(table_body, sub_chunks[1][0]);
-
-    Ok(())
-}
-
-pub fn state_updater(
-    mut state: ResMut<CustomState>,
-    global_state: Res<GlobalState>,
-) -> WidgetResult {
-    let pool = global_state.pool.clone();
-
-    let scores = util::run_async(async move { Score::get_all(&pool).await })?;
-    state.scores = scores;
 
     Ok(())
 }

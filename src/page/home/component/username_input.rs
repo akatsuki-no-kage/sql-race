@@ -15,8 +15,6 @@ use crate::{
 
 const INVALID_USERNAME_MESSAGE: &str = "Username already exists!";
 
-pub struct Chunk;
-
 #[derive(State)]
 pub struct CustomState {
     pub username: TextArea<'static>,
@@ -41,6 +39,8 @@ impl CustomState {
         self.username.lines().join("\n")
     }
 }
+
+pub struct Chunk;
 
 pub fn render(
     mut frame: ResMut<WidgetFrame>,
