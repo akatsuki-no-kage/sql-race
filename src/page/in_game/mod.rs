@@ -5,13 +5,13 @@ use std::time::{Duration, Instant};
 use anyhow::{anyhow, Result};
 use component::{
     action::{self, Action},
-    hotkey_guide::{self, HotKeyGuild},
+    hotkey_guide,
     query_input::{self, QueryInput},
     question::{self, Question},
     schema::Schema,
-    score::{self, Score},
+    score,
     table::{self, Table},
-    timer::{self, Timer},
+    timer,
 };
 use futures::{stream::FuturesOrdered, TryStreamExt};
 use ratatui::{
@@ -339,14 +339,18 @@ pub fn event_handler(
 
 #[set]
 pub fn InGameSet(app: App) -> App {
-    app.states(timer::CustomState::default())
-        .widgets(chunk_generator)
-        .widgets(event_handler)
-        .widgets(state_updater)
-        .widgets(hotkey_guide::render)
-        .widgets(timer::render)
-        .widgets(component::query_input::event_handler)
-        .widgets(component::action::event_handler)
-        .widgets(component::schema::event_handler)
-        .widgets(component::table::event_handler)
+    app.states((timer::CustomState::default(), score::CustomState::default()))
+        .widgets((
+            chunk_generator,
+            event_handler,
+            state_updater,
+            hotkey_guide::render,
+
+            timer::render,
+            score::render,
+            component::query_input::event_handler,
+            component::action::event_handler,
+            component::schema::event_handler,
+            component::table::event_handler,
+        ))
 }

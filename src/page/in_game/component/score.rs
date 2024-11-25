@@ -1,22 +1,25 @@
-use ratatui::{
-    buffer::Buffer,
-    layout::Rect,
-    widgets::{Block, Borders, Paragraph, Widget},
-};
-
-use crate::page::in_game::InGameState;
+use ratatui::widgets::{Block, Borders, Paragraph, Widget};
+use widgetui::{Chunks, Res, ResMut, State, WidgetFrame, WidgetResult};
 
 pub struct Chunk;
 
-pub struct Score<'a> {
-    pub in_game_state: &'a InGameState,
+#[derive(Default, State)]
+pub struct CustomState {
+    score: usize,
 }
 
-impl Widget for Score<'_> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        Paragraph::new(self.in_game_state.score.to_string())
-            .centered()
-            .block(Block::default().title("Score").borders(Borders::ALL))
-            .render(area, buf);
-    }
+pub fn render(
+    mut frame: ResMut<WidgetFrame>,
+    chunks: Res<Chunks>,
+    state: Res<CustomState>,
+) -> WidgetResult {
+    let chunk = chunks.get_chunk::<Chunk>()?;
+
+    let score = Paragraph::new(state.score.to_string())
+        .centered()
+        .block(Block::default().title("Score").borders(Borders::ALL));
+
+    frame.render_widget(score, chunk);
+
+    Ok(())
 }
