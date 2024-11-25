@@ -6,6 +6,8 @@ use ratatui::{
 
 use crate::page::in_game::InGameState;
 
+pub struct Chunk;
+
 pub struct Timer<'a> {
     pub in_game_state: &'a InGameState,
 }

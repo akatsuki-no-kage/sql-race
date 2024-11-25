@@ -18,6 +18,8 @@ use crate::{
 
 const ID: usize = 2;
 
+pub struct Chunk;
+
 pub struct Table<'a> {
     pub in_game_state: &'a InGameState,
 }

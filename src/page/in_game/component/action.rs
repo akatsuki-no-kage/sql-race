@@ -12,6 +12,8 @@ use crate::{
     state::{GlobalState, Screen},
 };
 
+pub struct Chunk;
+
 pub enum ActionType {
     Run,
     ViewSchema,

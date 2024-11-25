@@ -8,7 +8,10 @@ pub mod util;
 use std::sync::Arc;
 
 use anyhow::Result;
-use page::{home::HomeSet, in_game::{self, InGame, InGameState}};
+use page::{
+    home::HomeSet,
+    in_game::{self, InGame, InGameSet, InGameState},
+};
 use sqlx::SqlitePool;
 use state::{GlobalState, Screen};
 use widgetui::{App, Res, ResMut, WidgetFrame, WidgetResult};
@@ -45,13 +48,8 @@ async fn main() -> Result<()> {
         .states(global_state)
         .states(in_game_state)
         .sets(HomeSet)
+        .sets(InGameSet)
         .widgets(render)
-        .widgets(in_game::event_handler)
-        .widgets(in_game::state_updater)
-        .widgets(in_game::component::query_input::event_handler)
-        .widgets(in_game::component::action::event_handler)
-        .widgets(in_game::component::schema::event_handler)
-        .widgets(in_game::component::table::event_handler)
         .run()?;
     Ok(())
 }

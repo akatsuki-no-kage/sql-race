@@ -4,8 +4,14 @@ use std::time::{Duration, Instant};
 
 use anyhow::{anyhow, Result};
 use component::{
-    action::Action, hotkey_guide::HotKeyGuild, query_input::QueryInput, question::Question,
-    schema::Schema, score::Score, table::Table, timer::Timer,
+    action::{self, Action},
+    hotkey_guide::{self, HotKeyGuild},
+    query_input::{self, QueryInput},
+    question::{self, Question},
+    schema::Schema,
+    score::{self, Score},
+    table::{self, Table},
+    timer::{self, Timer},
 };
 use futures::{stream::FuturesOrdered, TryStreamExt};
 use ratatui::{
@@ -16,7 +22,10 @@ use ratatui::{
 use sqlx::sqlite::SqliteRow;
 use sqlx::{Column, Row};
 use tui_textarea::TextArea;
-use widgetui::{Events, Res, ResMut, State, WidgetResult};
+use widgetui::{
+    constraint, layout, set, App, Chunks, Events, Res, ResMut, Set, State, WidgetFrame,
+    WidgetResult,
+};
 
 use crate::{
     model,
@@ -236,6 +245,27 @@ impl Widget for InGame<'_> {
     }
 }
 
+pub fn chunk_generator(frame: Res<WidgetFrame>, mut chunks: ResMut<Chunks>) -> WidgetResult {
+    let new_chunks = layout! {
+        frame.size(),
+        (#3) => { %5, %10, %85 },
+        (%70) => { %70, %30 },
+        (%25) => { %70, %30 }
+    };
+
+    chunks.register_chunk::<score::Chunk>(new_chunks[0][0]);
+    chunks.register_chunk::<timer::Chunk>(new_chunks[0][1]);
+    chunks.register_chunk::<hotkey_guide::Chunk>(new_chunks[0][2]);
+
+    chunks.register_chunk::<query_input::Chunk>(new_chunks[1][0]);
+    chunks.register_chunk::<question::Chunk>(new_chunks[1][1]);
+
+    chunks.register_chunk::<table::Chunk>(new_chunks[2][0]);
+    chunks.register_chunk::<action::Chunk>(new_chunks[2][1]);
+
+    Ok(())
+}
+
 pub fn state_updater(
     in_game_state: ResMut<InGameState>,
     username_input_state: Res<username_input::CustomState>,
@@ -305,4 +335,15 @@ pub fn event_handler(
     }
 
     Ok(())
+}
+
+#[set]
+pub fn InGameSet(app: App) -> App {
+    app.widgets(chunk_generator)
+        .widgets(event_handler)
+        .widgets(state_updater)
+        .widgets(component::query_input::event_handler)
+        .widgets(component::action::event_handler)
+        .widgets(component::schema::event_handler)
+        .widgets(component::table::event_handler)
 }

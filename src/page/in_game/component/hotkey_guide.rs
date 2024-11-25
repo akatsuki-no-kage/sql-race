@@ -6,6 +6,8 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph, Widget},
 };
 
+pub struct Chunk;
+
 pub struct HotKeyGuild;
 
 const HOTKEY: &str = "Ctrl+A: Select All / Ctrl + R: Run Query / Enter: Choose / \u{2192}, \u{2190}: Move / Esc: Menu";

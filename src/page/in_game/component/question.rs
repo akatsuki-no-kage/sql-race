@@ -8,6 +8,8 @@ use ratatui::{
 
 use crate::page::in_game::InGameState;
 
+pub struct Chunk;
+
 const ID: usize = 1;
 
 pub struct Question<'a> {

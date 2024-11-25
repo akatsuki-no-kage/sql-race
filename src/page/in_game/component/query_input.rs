@@ -10,6 +10,8 @@ use crate::{
     state::{GlobalState, Screen},
 };
 
+pub struct Chunk;
+
 pub const ID: usize = 0;
 
 pub struct QueryInput<'a> {

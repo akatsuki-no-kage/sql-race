@@ -12,6 +12,8 @@ use crate::{
     state::{GlobalState, Screen},
 };
 
+pub struct Chunk;
+
 pub struct Schema<'a> {
     pub in_game_state: &'a InGameState,
 }
