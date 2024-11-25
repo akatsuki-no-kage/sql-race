@@ -3,42 +3,58 @@ use ratatui::{
     prelude::*,
     widgets::{Block, Borders},
 };
-use widgetui::{Events, Res, ResMut, WidgetResult};
+use tui_textarea::TextArea;
+use widgetui::{Chunks, Events, Res, ResMut, State, WidgetFrame, WidgetResult};
 
 use crate::{
-    page::in_game::InGameState,
+    page::in_game::FocusState,
     state::{GlobalState, Screen},
 };
 
-pub struct Chunk;
-
 pub const ID: usize = 0;
 
-pub struct QueryInput<'a> {
-    pub in_game_state: &'a mut InGameState,
+pub struct Chunk;
+
+#[derive(Default, State)]
+pub struct CustomState {
+    pub query: TextArea<'static>,
 }
 
-impl Widget for QueryInput<'_> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        let border_color = if self.in_game_state.focused_element == ID {
-            Color::Green
-        } else {
-            Color::White
-        };
-
-        self.in_game_state.query.set_block(
-            Block::default()
-                .title("Query")
-                .borders(Borders::ALL)
-                .fg(border_color),
-        );
-        self.in_game_state.query.render(area, buf);
+pub fn render(
+    mut frame: ResMut<WidgetFrame>,
+    chunks: Res<Chunks>,
+    mut state: ResMut<CustomState>,
+    in_game_state: Res<FocusState>,
+    global_state: Res<GlobalState>,
+) -> WidgetResult {
+    if global_state.screen != Screen::InGame {
+        return Ok(());
     }
+
+    let chunk = chunks.get_chunk::<Chunk>()?;
+
+    let border_color = if in_game_state.focused_element == ID {
+        Color::Green
+    } else {
+        Color::White
+    };
+
+    state.query.set_block(
+        Block::default()
+            .title("Query")
+            .borders(Borders::ALL)
+            .fg(border_color),
+    );
+
+    state.query.render(chunk, frame.buffer_mut());
+
+    Ok(())
 }
 
 pub fn event_handler(
     events: Res<Events>,
-    mut in_game_state: ResMut<InGameState>,
+    mut state: ResMut<CustomState>,
+    in_game_state: Res<FocusState>,
     global_state: Res<GlobalState>,
 ) -> WidgetResult {
     if global_state.screen != Screen::InGame || in_game_state.focused_element != ID {
@@ -51,7 +67,7 @@ pub fn event_handler(
 
     match event {
         Event::Key(key_event) => {
-            in_game_state.query.input(*key_event);
+            state.query.input(*key_event);
         }
         _ => {}
     }

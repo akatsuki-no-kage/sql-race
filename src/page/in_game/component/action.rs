@@ -1,14 +1,12 @@
 use ratatui::{
-    buffer::Buffer,
     crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers},
-    layout::Rect,
     style::{Color, Style},
-    widgets::{Block, Borders, List, ListItem, Widget},
+    widgets::{Block, Borders, List, ListItem},
 };
-use widgetui::{Events, Res, ResMut, WidgetResult};
+use widgetui::{Chunks, Events, Res, ResMut, State, WidgetFrame, WidgetResult};
 
 use crate::{
-    page::in_game::InGameState,
+    page::in_game::FocusState,
     state::{GlobalState, Screen},
 };
 
@@ -42,54 +40,66 @@ const ACTIONS: [ActionType; 4] = [
 
 const ID: usize = 3;
 
-pub struct Action<'a> {
-    pub in_game_state: &'a InGameState,
+#[derive(Default, State)]
+pub struct CustomState {
+    selected_option: usize,
 }
 
-impl Widget for Action<'_> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        let items: Vec<_> = ACTIONS
-            .iter()
-            .enumerate()
-            .map(|(i, option)| {
-                let style = if i == self.in_game_state.run_option {
-                    Style::default().bg(Color::Green)
-                } else {
-                    Style::default()
-                };
-                ListItem::new(option.to_string()).style(style)
-            })
-            .collect();
-        let list = List::new(items).block(
-            Block::default()
-                .title("Options")
-                .borders(Borders::ALL)
-                .border_style(
-                    Style::default().fg(if self.in_game_state.focused_element != ID {
-                        Color::White
-                    } else {
-                        Color::Green
-                    }),
-                ),
-        );
-        list.render(area, buf);
-    }
-}
-
-impl InGameState {
-    fn next_run_option(&mut self) {
-        self.run_option = (self.run_option + 1) % ACTIONS.len();
+impl CustomState {
+    fn next(&mut self) {
+        self.selected_option = (self.selected_option + 1) % ACTIONS.len();
     }
 
-    fn previous_run_option(&mut self) {
+    fn prev(&mut self) {
         let length = ACTIONS.len();
-        self.run_option = (self.run_option + length - 1) % length;
+        self.selected_option = (self.selected_option + length - 1) % length;
     }
+}
+
+pub fn render(
+    mut frame: ResMut<WidgetFrame>,
+    chunks: Res<Chunks>,
+    state: Res<CustomState>,
+    in_game_state: Res<FocusState>,
+    global_state: Res<GlobalState>,
+) -> WidgetResult {
+    if global_state.screen != Screen::InGame {
+        return Ok(());
+    }
+
+    let chunk = chunks.get_chunk::<Chunk>()?;
+
+    let items: Vec<_> = ACTIONS
+        .iter()
+        .enumerate()
+        .map(|(i, option)| {
+            let style = if i == state.selected_option {
+                Style::default().bg(Color::Green)
+            } else {
+                Style::default()
+            };
+            ListItem::new(option.to_string()).style(style)
+        })
+        .collect();
+    let list = List::new(items).block(
+        Block::default()
+            .title("Options")
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(if in_game_state.focused_element != ID {
+                Color::White
+            } else {
+                Color::Green
+            })),
+    );
+    frame.render_widget(list, chunk);
+
+    Ok(())
 }
 
 pub fn event_handler(
     mut events: ResMut<Events>,
-    mut in_game_state: ResMut<InGameState>,
+    mut state: ResMut<CustomState>,
+    in_game_state: Res<FocusState>,
     global_state: Res<GlobalState>,
 ) -> WidgetResult {
     if global_state.screen != Screen::InGame || in_game_state.focused_element != ID {
@@ -105,26 +115,22 @@ pub fn event_handler(
             code: KeyCode::Down,
             modifiers: KeyModifiers::NONE,
             ..
-        }) => {
-            in_game_state.next_run_option();
-        }
+        }) => state.next(),
         Event::Key(KeyEvent {
             code: KeyCode::Up,
             modifiers: KeyModifiers::NONE,
             ..
-        }) => {
-            in_game_state.previous_run_option();
-        }
-        Event::Key(KeyEvent {
-            code: KeyCode::Enter,
-            modifiers: KeyModifiers::NONE,
-            ..
-        }) => match ACTIONS[in_game_state.run_option] {
-            ActionType::Run => in_game_state.run_query(),
-            ActionType::ViewSchema => in_game_state.view_schema(),
-            ActionType::Submit => in_game_state.submit(),
-            ActionType::Exit => events.register_exit(),
-        },
+        }) => state.prev(),
+        // Event::Key(KeyEvent {
+        //     code: KeyCode::Enter,
+        //     modifiers: KeyModifiers::NONE,
+        //     ..
+        // }) => match ACTIONS[in_game_state.run_option] {
+        //     ActionType::Run => in_game_state.run_query(),
+        //     ActionType::ViewSchema => in_game_state.view_schema(),
+        //     ActionType::Submit => in_game_state.submit(),
+        //     ActionType::Exit => events.register_exit(),
+        // },
         _ => {}
     }
 

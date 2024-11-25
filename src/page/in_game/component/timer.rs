@@ -3,7 +3,12 @@ use std::time::{Duration, Instant};
 use ratatui::widgets::{Block, Borders, Paragraph};
 use widgetui::{Chunks, Res, ResMut, State, WidgetFrame, WidgetResult};
 
-use crate::state::{GlobalState, Screen};
+use crate::{
+    page::{home::component::username_input, in_game::finish_game},
+    state::{GlobalState, Screen},
+};
+
+use super::score;
 
 pub struct Chunk;
 
@@ -47,6 +52,19 @@ pub fn render(
         .block(Block::default().title("Time left").borders(Borders::ALL));
 
     frame.render_widget(timer, chunk);
+
+    Ok(())
+}
+
+pub fn state_updater(
+    state: Res<CustomState>,
+    username_input_state: Res<username_input::CustomState>,
+    score_state: Res<score::CustomState>,
+    mut global_state: ResMut<GlobalState>,
+) -> WidgetResult {
+    if state.get_time_left() == Duration::ZERO {
+        finish_game(&username_input_state, &score_state, &mut global_state);
+    }
 
     Ok(())
 }

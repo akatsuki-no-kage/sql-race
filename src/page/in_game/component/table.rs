@@ -12,15 +12,11 @@ use sqlx::{sqlite::SqliteRow, Row as _};
 use widgetui::{Chunks, Events, Res, ResMut, State, WidgetFrame, WidgetResult};
 
 use crate::{
-    page::in_game::InGameState,
+    page::in_game::FocusState,
     state::{GlobalState, Screen},
 };
 
 const ID: usize = 2;
-
-fn is_focused(in_game_state: &InGameState, global_state: &GlobalState) -> bool {
-    global_state.screen == Screen::InGame && in_game_state.focused_element == ID
-}
 
 pub struct Chunk;
 
@@ -89,8 +85,7 @@ fn render_table(
     frame: &mut WidgetFrame,
     chunk: Rect,
     state: &CustomState,
-    in_game_state: &InGameState,
-    global_state: &GlobalState,
+    in_game_state: &FocusState,
 ) -> WidgetResult {
     let headers = &state.table_headers;
     let header_count = headers.len();
@@ -120,7 +115,7 @@ fn render_table(
         .collect();
 
     let column_widths = vec![Constraint::Length(10); header_count];
-    let table_block = if is_focused(in_game_state, global_state) {
+    let table_block = if in_game_state.focused_element == ID {
         Block::default()
             .title("Query Result (↑↓ to scroll)")
             .borders(Borders::ALL)
@@ -175,10 +170,10 @@ pub fn render(
     mut frame: ResMut<WidgetFrame>,
     chunks: Res<Chunks>,
     state: Res<CustomState>,
-    in_game_state: Res<InGameState>,
+    in_game_state: Res<FocusState>,
     global_state: Res<GlobalState>,
 ) -> WidgetResult {
-    if !is_focused(&in_game_state, &global_state) {
+    if global_state.screen != Screen::InGame {
         return Ok(());
     }
 
@@ -186,24 +181,17 @@ pub fn render(
 
     match &state.table_rows {
         Err(error) => render_error(error.to_string(), &mut frame, chunk),
-        Ok(rows) => render_table(
-            rows,
-            &mut frame,
-            chunk,
-            &state,
-            &in_game_state,
-            &global_state,
-        ),
+        Ok(rows) => render_table(rows, &mut frame, chunk, &state, &in_game_state),
     }
 }
 
 pub fn event_handler(
     events: Res<Events>,
     mut state: ResMut<CustomState>,
-    in_game_state: Res<InGameState>,
+    in_game_state: Res<FocusState>,
     global_state: Res<GlobalState>,
 ) -> WidgetResult {
-    if !is_focused(&in_game_state, &global_state) {
+    if global_state.screen != Screen::InGame || in_game_state.focused_element != ID {
         return Ok(());
     }
 
