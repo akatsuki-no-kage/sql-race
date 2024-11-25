@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use ratatui::{
     crossterm::event::Event,
     prelude::*,
@@ -20,18 +22,21 @@ pub struct CustomState {
     pub query: TextArea<'static>,
 }
 
+impl Display for CustomState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.query.lines().join("\n"))
+    }
+}
+
 pub fn render(
     mut frame: ResMut<WidgetFrame>,
     chunks: Res<Chunks>,
     mut state: ResMut<CustomState>,
     focus_state: Res<FocusState>,
-    global_state: Res<GlobalState>,
 ) -> WidgetResult {
-    if global_state.screen != Screen::InGame {
+    let Ok(chunk) = chunks.get_chunk::<Chunk>() else {
         return Ok(());
-    }
-
-    let chunk = chunks.get_chunk::<Chunk>()?;
+    };
 
     let border_color = if focus_state.focused_element == ID {
         Color::Green
@@ -65,11 +70,8 @@ pub fn event_handler(
         return Ok(());
     };
 
-    match event {
-        Event::Key(key_event) => {
-            state.query.input(*key_event);
-        }
-        _ => {}
+    if let Event::Key(key_event) = event {
+        state.query.input(*key_event);
     }
 
     Ok(())

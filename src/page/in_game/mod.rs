@@ -5,6 +5,7 @@ use ratatui::{
     crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers},
     layout::{Constraint, Direction, Layout},
 };
+use sqlx::{Column, Row};
 use widgetui::{
     constraint, layout, set, App, Chunks, Events, Res, ResMut, Set, State, WidgetFrame,
     WidgetResult,
@@ -31,7 +32,7 @@ fn finish_game(
     util::run_async(async move { model::Score::insert(username, score as i64, &pool).await })?;
     global_state.screen = Screen::Home;
 
-    return Ok(());
+    Ok(())
 }
 
 #[derive(Default, State)]
@@ -49,7 +50,16 @@ impl FocusState {
     }
 }
 
-pub fn chunk_generator(frame: Res<WidgetFrame>, mut chunks: ResMut<Chunks>) -> WidgetResult {
+pub fn chunk_generator(
+    frame: Res<WidgetFrame>,
+    mut chunks: ResMut<Chunks>,
+    schema_state: Res<schema::CustomState>,
+    global_state: Res<GlobalState>,
+) -> WidgetResult {
+    if global_state.screen != Screen::InGame || schema_state.is_visible {
+        return Ok(());
+    }
+
     let new_chunks = layout! {
         frame.size(),
         (#3) => { %5, %10, %85 },
@@ -70,10 +80,39 @@ pub fn chunk_generator(frame: Res<WidgetFrame>, mut chunks: ResMut<Chunks>) -> W
     Ok(())
 }
 
+pub fn run_query(
+    query_state: Res<query_input::CustomState>,
+    question_state: Res<question::CustomState>,
+    mut table_state: ResMut<table::CustomState>,
+) {
+    let query = query_state.to_string();
+    let raw_schema = question_state.questions[question_state.selected_question]
+        .raw_schema
+        .clone();
+    match util::run_async(async move { util::run_query(&query, &raw_schema).await }) {
+        Ok(rows) => {
+            // HACK: use another way to get headers
+            table_state.headers = if let Some(row) = rows.first() {
+                row.columns()
+                    .iter()
+                    .map(|col| col.name().to_string())
+                    .collect()
+            } else {
+                vec![]
+            };
+            table_state.rows = Ok(rows);
+        }
+        Err(err) => table_state.rows = Err(err),
+    };
+}
+
 pub fn event_handler(
     events: Res<Events>,
     mut focus_state: ResMut<FocusState>,
-    schema_state: Res<schema::CustomState>,
+    mut schema_state: ResMut<schema::CustomState>,
+    query_state: Res<query_input::CustomState>,
+    question_state: Res<question::CustomState>,
+    mut table_state: ResMut<table::CustomState>,
     mut global_state: ResMut<GlobalState>,
 ) -> WidgetResult {
     if global_state.screen != Screen::InGame || schema_state.is_visible {
@@ -100,16 +139,16 @@ pub fn event_handler(
             modifiers: KeyModifiers::CONTROL,
             ..
         }) => focus_state.next(),
-        // Event::Key(KeyEvent {
-        //     code: KeyCode::Char('r'),
-        //     modifiers: KeyModifiers::CONTROL,
-        //     ..
-        // }) => in_game_state.run_query(),
-        // Event::Key(KeyEvent {
-        //     code: KeyCode::Char('h'),
-        //     modifiers: KeyModifiers::CONTROL,
-        //     ..
-        // }) => in_game_state.view_schema(),
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('r'),
+            modifiers: KeyModifiers::CONTROL,
+            ..
+        }) => run_query(query_state, question_state, table_state),
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('h'),
+            modifiers: KeyModifiers::CONTROL,
+            ..
+        }) => schema_state.is_visible = true,
         // Event::Key(KeyEvent {
         //     code: KeyCode::Char('s'),
         //     modifiers: KeyModifiers::CONTROL,

@@ -45,13 +45,11 @@ pub fn render(
     mut frame: ResMut<WidgetFrame>,
     chunks: Res<Chunks>,
     state: Res<CustomState>,
-    global_state: Res<GlobalState>,
 ) -> WidgetResult {
-    if global_state.screen != Screen::Home {
+    let Ok(chunk) = chunks.get_chunk::<Chunk>() else {
         return Ok(());
-    }
+    };
 
-    let chunk = chunks.get_chunk::<Chunk>()?;
     let layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints([

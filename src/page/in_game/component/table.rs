@@ -22,26 +22,26 @@ pub struct Chunk;
 
 #[derive(State)]
 pub struct CustomState {
-    table_headers: Vec<String>,
-    table_rows: Result<Vec<SqliteRow>>,
-    inner_state: TableState,
-    table_scroll_state: ScrollbarState,
+    pub headers: Vec<String>,
+    pub rows: Result<Vec<SqliteRow>>,
+    pub inner_state: TableState,
+    pub scroll_state: ScrollbarState,
 }
 
 impl Default for CustomState {
     fn default() -> Self {
         Self {
-            table_headers: Default::default(),
-            table_rows: Ok(Default::default()),
+            headers: Default::default(),
+            rows: Ok(Default::default()),
             inner_state: Default::default(),
-            table_scroll_state: Default::default(),
+            scroll_state: Default::default(),
         }
     }
 }
 
 impl CustomState {
     fn _next(&self) -> Option<usize> {
-        self.table_rows
+        self.rows
             .as_ref()
             .map(|rows| (self.inner_state.selected().unwrap_or(0) + 1) % rows.len())
             .ok()
@@ -49,12 +49,12 @@ impl CustomState {
     fn next(&mut self) {
         if let Some(i) = self._next() {
             self.inner_state.select(Some(i));
-            self.table_scroll_state = self.table_scroll_state.position(i);
+            self.scroll_state = self.scroll_state.position(i);
         }
     }
 
     fn _prev(&self) -> Option<usize> {
-        self.table_rows
+        self.rows
             .as_ref()
             .map(|rows| {
                 let length = rows.len();
@@ -66,7 +66,7 @@ impl CustomState {
     fn prev(&mut self) {
         if let Some(i) = self._prev() {
             self.inner_state.select(Some(i));
-            self.table_scroll_state = self.table_scroll_state.position(i);
+            self.scroll_state = self.scroll_state.position(i);
         }
     }
 }
@@ -87,7 +87,7 @@ fn render_table(
     state: &CustomState,
     focus_state: &FocusState,
 ) -> WidgetResult {
-    let headers = &state.table_headers;
+    let headers = &state.headers;
     let header_count = headers.len();
     let header_cells: Vec<_> = headers
         .iter()
@@ -160,7 +160,7 @@ fn render_table(
         scrollbar,
         scroll_area,
         frame.buffer_mut(),
-        &mut state.table_scroll_state.clone(),
+        &mut state.scroll_state.clone(),
     );
 
     Ok(())
@@ -171,15 +171,12 @@ pub fn render(
     chunks: Res<Chunks>,
     state: Res<CustomState>,
     focus_state: Res<FocusState>,
-    global_state: Res<GlobalState>,
 ) -> WidgetResult {
-    if global_state.screen != Screen::InGame {
+    let Ok(chunk) = chunks.get_chunk::<Chunk>() else {
         return Ok(());
-    }
+    };
 
-    let chunk = chunks.get_chunk::<Chunk>()?;
-
-    match &state.table_rows {
+    match &state.rows {
         Err(error) => render_error(error.to_string(), &mut frame, chunk),
         Ok(rows) => render_table(rows, &mut frame, chunk, &state, &focus_state),
     }

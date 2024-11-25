@@ -57,13 +57,10 @@ pub fn render(
     chunks: Res<Chunks>,
     state: Res<CustomState>,
     focus_state: Res<FocusState>,
-    global_state: Res<GlobalState>,
 ) -> WidgetResult {
-    if global_state.screen != Screen::InGame {
+    let Ok(chunk) = chunks.get_chunk::<Chunk>() else {
         return Ok(());
-    }
-
-    let chunk = chunks.get_chunk::<Chunk>()?;
+    };
 
     let border_color = if focus_state.focused_element == ID {
         Color::Green

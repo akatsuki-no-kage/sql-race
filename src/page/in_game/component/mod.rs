@@ -1,4 +1,3 @@
-
 pub mod query_input;
 pub mod timer;
 pub mod score;
@@ -7,4 +6,3 @@ pub mod question;
 pub mod action;
 pub mod table;
 pub mod schema;
-

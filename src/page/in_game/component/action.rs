@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use ratatui::{
     crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers},
     style::{Color, Style},
@@ -19,15 +21,18 @@ pub enum ActionType {
     Exit,
 }
 
-impl ToString for ActionType {
-    fn to_string(&self) -> String {
-        match self {
-            ActionType::Run => "Run (Ctrl + R)",
-            ActionType::ViewSchema => "View Schema (Ctrl + H)",
-            ActionType::Submit => "Submit (Ctrl + S)",
-            ActionType::Exit => "Exit (Ctrl + Q)",
-        }
-        .to_string()
+impl Display for ActionType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                ActionType::Run => "Run (Ctrl + R)",
+                ActionType::ViewSchema => "View Schema (Ctrl + H)",
+                ActionType::Submit => "Submit (Ctrl + S)",
+                ActionType::Exit => "Exit (Ctrl + Q)",
+            }
+        )
     }
 }
 
@@ -61,13 +66,10 @@ pub fn render(
     chunks: Res<Chunks>,
     state: Res<CustomState>,
     focus_state: Res<FocusState>,
-    global_state: Res<GlobalState>,
 ) -> WidgetResult {
-    if global_state.screen != Screen::InGame {
+    let Ok(chunk) = chunks.get_chunk::<Chunk>() else {
         return Ok(());
-    }
-
-    let chunk = chunks.get_chunk::<Chunk>()?;
+    };
 
     let items: Vec<_> = ACTIONS
         .iter()

@@ -11,7 +11,15 @@ use widgetui::{
 use crate::state::{GlobalState, Screen};
 use component::{rank, username_input};
 
-pub fn chunk_generator(frame: Res<WidgetFrame>, mut chunks: ResMut<Chunks>) -> WidgetResult {
+pub fn chunk_generator(
+    frame: Res<WidgetFrame>,
+    mut chunks: ResMut<Chunks>,
+    global_state: Res<GlobalState>,
+) -> WidgetResult {
+    if global_state.screen != Screen::Home {
+        return Ok(());
+    }
+
     let new_chunks = layout! {
         frame.size(),
         (%70) => { %25, %50, %25 },

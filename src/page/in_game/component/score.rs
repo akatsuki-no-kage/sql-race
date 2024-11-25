@@ -1,8 +1,6 @@
 use ratatui::widgets::{Block, Borders, Paragraph};
 use widgetui::{Chunks, Res, ResMut, State, WidgetFrame, WidgetResult};
 
-use crate::state::{GlobalState, Screen};
-
 pub struct Chunk;
 
 #[derive(Default, State)]
@@ -14,13 +12,10 @@ pub fn render(
     mut frame: ResMut<WidgetFrame>,
     chunks: Res<Chunks>,
     state: Res<CustomState>,
-    global_state: Res<GlobalState>,
 ) -> WidgetResult {
-    if global_state.screen != Screen::InGame {
+    let Ok(chunk) = chunks.get_chunk::<Chunk>() else {
         return Ok(());
-    }
-
-    let chunk = chunks.get_chunk::<Chunk>()?;
+    };
 
     let score = Paragraph::new(state.score.to_string())
         .centered()
