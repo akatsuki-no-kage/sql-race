@@ -18,25 +18,15 @@ pub enum Screen {
 #[derive(State)]
 pub struct GlobalState {
     pub pool: Arc<SqlitePool>,
-    pub username: TextArea<'static>,
     pub screen: Screen,
 }
 
 impl GlobalState {
     pub fn new(pool: Arc<SqlitePool>) -> Self {
-        let mut text_area = TextArea::default();
-        text_area.set_placeholder_text("Name here");
-        text_area.set_block(Block::default().borders(Borders::ALL).title("Name"));
-        text_area.set_alignment(Alignment::Left);
 
         Self {
             pool,
-            username: text_area,
             screen: Default::default(),
         }
-    }
-
-    pub fn get_username(&self) -> String {
-        self.username.lines().join("\n")
     }
 }

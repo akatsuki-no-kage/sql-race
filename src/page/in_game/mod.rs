@@ -24,6 +24,8 @@ use crate::{
     util,
 };
 
+use super::home::component::username_input;
+
 const TIME_LIMIT: Duration = Duration::from_secs(100);
 
 #[derive(State)]
@@ -236,6 +238,7 @@ impl Widget for InGame<'_> {
 
 pub fn state_updater(
     in_game_state: ResMut<InGameState>,
+    username_input_state: Res<username_input::CustomState>,
     mut global_state: ResMut<GlobalState>,
 ) -> WidgetResult {
     if global_state.screen != Screen::InGame {
@@ -244,7 +247,7 @@ pub fn state_updater(
     if in_game_state.question_index == in_game_state.questions.len() - 1
         || in_game_state.get_time_left() == Duration::ZERO
     {
-        let username = global_state.get_username();
+        let username = username_input_state.get_username();
         let score = in_game_state.score;
         let pool = global_state.pool.clone();
         util::run_async(async move { model::Score::insert(username, score as i64, &pool).await })?;

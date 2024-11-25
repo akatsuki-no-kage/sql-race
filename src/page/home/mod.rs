@@ -2,61 +2,26 @@ pub mod component;
 
 use ratatui::{
     crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers},
-    layout::{Constraint, Direction, Layout, Rect},
-    widgets::Widget,
+    layout::{Constraint, Direction, Layout},
 };
-use widgetui::{Events, Res, ResMut, State, WidgetResult};
-
-use crate::{
-    model::Score,
-    state::{GlobalState, Screen},
+use widgetui::{
+    constraint, layout, set, App, Chunks, Events, Res, ResMut, Set, WidgetFrame, WidgetResult,
 };
-use component::{rank::Rank, username_input::UsernameInput};
 
-#[derive(State)]
-pub struct HomeState {
-    pub scores: Vec<Score>,
-    pub is_username_valid: bool,
-}
+use crate::state::{GlobalState, Screen};
+use component::{rank, username_input};
 
-impl Default for HomeState {
-    fn default() -> Self {
-        Self {
-            scores: Default::default(),
-            is_username_valid: true,
-        }
-    }
-}
+pub fn chunk_generator(frame: Res<WidgetFrame>, mut chunks: ResMut<Chunks>) -> WidgetResult {
+    let new_chunks = layout! {
+        frame.size(),
+        (%70) => { %25, %50, %25 },
+        (#6) => { %25, %50, %25 }
+    };
 
-pub struct Home<'a> {
-    pub home_state: Res<'a, HomeState>,
-    pub global_state: Res<'a, GlobalState>,
-}
+    chunks.register_chunk::<rank::Chunk>(new_chunks[0][1]);
+    chunks.register_chunk::<username_input::Chunk>(new_chunks[1][1]);
 
-impl Widget for Home<'_> {
-    fn render(self, area: ratatui::prelude::Rect, buf: &mut ratatui::prelude::Buffer) {
-        let squarter_x = area.width / 4;
-        let half_width = area.width / 2;
-
-        let layout = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Percentage(70), // Ranking section
-                Constraint::Length(6),      // Input section
-            ])
-            .split(Rect::new(squarter_x, 0, half_width, area.height));
-
-        Rank {
-            home_state: &self.home_state,
-        }
-        .render(layout[0], buf);
-
-        UsernameInput {
-            home_state: &self.home_state,
-            global_state: &self.global_state,
-        }
-        .render(layout[1], buf);
-    }
+    Ok(())
 }
 
 pub fn event_handler(mut events: ResMut<Events>, global_state: Res<GlobalState>) -> WidgetResult {
@@ -78,4 +43,16 @@ pub fn event_handler(mut events: ResMut<Events>, global_state: Res<GlobalState>)
     }
 
     Ok(())
+}
+
+#[set]
+pub fn HomeSet(app: App) -> App {
+    app.states(rank::CustomState::default())
+        .states(username_input::CustomState::default())
+        .widgets(chunk_generator)
+        .widgets(event_handler)
+        .widgets(rank::render)
+        .widgets(rank::state_updater)
+        .widgets(username_input::render)
+        .widgets(username_input::event_handler)
 }

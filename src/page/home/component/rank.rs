@@ -1,86 +1,86 @@
 use ratatui::{
-    layout::{Alignment, Constraint, Direction, Layout},
+    layout::{Alignment, Constraint},
+    prelude::*,
     style::{Color, Modifier, Style, Stylize},
     text::Text,
-    widgets::{Block, Borders, Paragraph, Row, Table, Widget},
+    widgets::{Block, Borders, Paragraph, Row, Table},
 };
-use widgetui::{Res, ResMut, WidgetResult};
+use widgetui::{constraint, layout, Chunks, Res, ResMut, State, WidgetFrame, WidgetResult};
 
-use crate::{model::Score, page::home::HomeState, state::GlobalState, util};
+use crate::{
+    model::Score,
+    state::{GlobalState, Screen},
+    util,
+};
 
-fn text<'a>(content: String) -> Text<'a> {
-    Text::from(content.to_owned()).alignment(Alignment::Center)
+pub struct Chunk;
+
+#[derive(State, Default)]
+pub struct CustomState {
+    pub scores: Vec<Score>,
 }
 
-impl Score {
-    fn into_row<'a>(&'a self) -> Row<'a> {
-        let row_content = [
-            self.username.clone(),
-            self.score.to_string(),
-            self.created_at.to_string(),
-        ];
-        let row = row_content.map(text);
+fn into_row<'a, const N: usize>(data: [String; N]) -> Row<'a> {
+    Row::new(data.map(|content| Text::from(content).alignment(Alignment::Center)))
+}
 
-        Row::new(row)
+pub fn render(
+    mut frame: ResMut<WidgetFrame>,
+    chunks: Res<Chunks>,
+    state: Res<CustomState>,
+    global_state: Res<GlobalState>,
+) -> WidgetResult {
+    if global_state.screen != Screen::Home {
+        return Ok(());
     }
-}
 
-pub struct Rank<'a> {
-    pub home_state: &'a HomeState,
-}
+    let chunk = chunks.get_chunk::<Chunk>()?;
 
-impl Widget for Rank<'_> {
-    fn render(self, area: ratatui::prelude::Rect, buf: &mut ratatui::prelude::Buffer) {
-        let header_height = Constraint::Percentage(5);
-        let table_height = Constraint::Percentage(90);
+    let sub_chunks = layout! {
+        chunk,
+        (%5),
+        (%90)
+    };
 
-        let table_layout = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints(&[header_height, table_height])
-            .split(area);
+    let header_block = Block::default()
+        .title("Ranking")
+        .title_alignment(Alignment::Center);
+    let header = Paragraph::new("").block(header_block);
 
-        let header_block = Block::default()
-            .title("Ranking")
-            .title_alignment(Alignment::Center);
-        let header = Paragraph::new("").block(header_block);
+    let col_length = Constraint::Ratio(1, 3);
 
-        let col_length = Constraint::Ratio(1, 3);
+    let headers = into_row(["Username", "Score", "Time"].map(|s| s.to_string()));
+    let rows: Vec<_> = state
+        .scores
+        .iter()
+        .map(|score| {
+            into_row([
+                score.username.clone(),
+                score.score.to_string(),
+                score.created_at.to_string(),
+            ])
+        })
+        .collect();
 
-        let rows: Vec<_> = self
-            .home_state
-            .scores
-            .iter()
-            .map(|score| score.into_row())
-            .collect();
+    let table_block = Block::default().borders(Borders::ALL);
+    let table_body = Table::new(rows, vec![col_length, col_length, col_length])
+        .header(headers)
+        .block(table_block);
 
-        let table_block = Block::default().borders(Borders::ALL);
-        let table_body = Table::new(rows, vec![col_length, col_length, col_length])
-            .header(Row::new(vec![
-                text("Username".to_string())
-                    .add_modifier(Modifier::BOLD)
-                    .style(Style::default().fg(Color::Yellow)),
-                text("Score".to_string())
-                    .add_modifier(Modifier::BOLD)
-                    .style(Style::default().fg(Color::Yellow)),
-                text("Time".to_string())
-                    .add_modifier(Modifier::BOLD)
-                    .style(Style::default().fg(Color::Yellow)),
-            ]))
-            .block(table_block);
+    frame.render_widget(header, sub_chunks[0][0]);
+    frame.render_widget(table_body, sub_chunks[1][0]);
 
-        header.render(table_layout[0], buf);
-        table_body.render(table_layout[1], buf);
-    }
+    Ok(())
 }
 
 pub fn state_updater(
-    mut home_state: ResMut<HomeState>,
+    mut state: ResMut<CustomState>,
     global_state: Res<GlobalState>,
 ) -> WidgetResult {
     let pool = global_state.pool.clone();
 
     let scores = util::run_async(async move { Score::get_all(&pool).await })?;
-    home_state.scores = scores;
+    state.scores = scores;
 
     Ok(())
 }
