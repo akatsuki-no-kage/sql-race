@@ -207,17 +207,6 @@ impl Widget for InGame<'_> {
                 .as_ref(),
             )
             .split(area);
-        let status_area = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints(
-                [
-                    Constraint::Percentage(5),
-                    Constraint::Percentage(10),
-                    Constraint::Percentage(85),
-                ]
-                .as_ref(),
-            )
-            .split(main_area[0]);
         let query_and_question_area = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Percentage(70), Constraint::Percentage(30)].as_ref())
@@ -229,19 +218,11 @@ impl Widget for InGame<'_> {
 
         let in_game_state = &mut self.in_game_state;
 
-        Score { in_game_state }.render(status_area[0], buf);
-
-        Timer { in_game_state }.render(status_area[1], buf);
-
-        HotKeyGuild {}.render(status_area[2], buf);
-
         QueryInput { in_game_state }.render(query_and_question_area[0], buf);
 
         Question { in_game_state }.render(query_and_question_area[1], buf);
 
         Action { in_game_state }.render(result_and_features_area[1], buf);
-
-        Table { in_game_state }.render(result_and_features_area[0], buf);
     }
 }
 
@@ -339,18 +320,23 @@ pub fn event_handler(
 
 #[set]
 pub fn InGameSet(app: App) -> App {
-    app.states((timer::CustomState::default(), score::CustomState::default()))
-        .widgets((
-            chunk_generator,
-            event_handler,
-            state_updater,
-            hotkey_guide::render,
-
-            timer::render,
-            score::render,
-            component::query_input::event_handler,
-            component::action::event_handler,
-            component::schema::event_handler,
-            component::table::event_handler,
-        ))
+    app.states((
+        timer::CustomState::default(),
+        score::CustomState::default(),
+        table::CustomState::default(),
+    ))
+    .widgets((
+        chunk_generator,
+        event_handler,
+        state_updater,
+        hotkey_guide::render,
+        timer::render,
+        score::render,
+        table::render,
+        table::event_handler,
+        component::query_input::event_handler,
+        component::action::event_handler,
+        component::schema::event_handler,
+        component::table::event_handler,
+    ))
 }

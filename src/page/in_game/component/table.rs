@@ -1,15 +1,15 @@
+use anyhow::Result;
 use ratatui::{
-    buffer::Buffer,
     crossterm::event::{Event, KeyCode, KeyEvent},
     layout::{Constraint, Rect},
     style::{Color, Style, Stylize},
     widgets::{
         self, Block, Borders, Cell, Paragraph, Row, Scrollbar, ScrollbarOrientation,
-        StatefulWidget, Widget,
+        ScrollbarState, StatefulWidget, TableState,
     },
 };
-use sqlx::Row as _;
-use widgetui::{Events, Res, ResMut, WidgetResult};
+use sqlx::{sqlite::SqliteRow, Row as _};
+use widgetui::{Chunks, Events, Res, ResMut, State, WidgetFrame, WidgetResult};
 
 use crate::{
     page::in_game::InGameState,
@@ -18,118 +18,192 @@ use crate::{
 
 const ID: usize = 2;
 
-pub struct Chunk;
-
-pub struct Table<'a> {
-    pub in_game_state: &'a InGameState,
+fn is_focused(in_game_state: &InGameState, global_state: &GlobalState) -> bool {
+    global_state.screen == Screen::InGame && in_game_state.focused_element == ID
 }
 
-impl Widget for Table<'_> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        match &self.in_game_state.table_rows {
-            Err(error) => {
-                let paragraph = Paragraph::new(error.to_string())
-                    .block(Block::default().title("Error").borders(Borders::ALL))
-                    .style(Style::default().fg(Color::Red));
-                paragraph.render(area, buf);
-            }
-            Ok(rows) => {
-                let headers = &self.in_game_state.table_headers;
-                let header_count = headers.len();
+pub struct Chunk;
 
-                let header_cells: Vec<_> = headers
-                    .iter()
-                    .map(|name| Cell::from(name.clone()).style(Style::default().fg(Color::Yellow)))
-                    .collect();
-                let header_row = Row::new(header_cells);
+#[derive(State)]
+pub struct CustomState {
+    table_headers: Vec<String>,
+    table_rows: Result<Vec<SqliteRow>>,
+    inner_state: TableState,
+    table_scroll_state: ScrollbarState,
+}
 
-                let data_rows: Vec<_> = rows
-                    .iter()
-                    .map(|row| {
-                        let cells: Vec<Cell> = (0..header_count)
-                            .map(|column_id| {
-                                let value = match row.try_get::<String, _>(column_id) {
-                                    Ok(val) => val,
-                                    Err(_) => match row.try_get::<i32, _>(column_id) {
-                                        Ok(val) => val.to_string(),
-                                        Err(_) => "NULL".to_string(),
-                                    },
-                                };
-                                Cell::from(value)
-                            })
-                            .collect();
-                        Row::new(cells)
-                    })
-                    .collect();
-
-                let column_widths = vec![Constraint::Length(10); header_count];
-                let table_block = if self.in_game_state.focused_element == ID {
-                    Block::default()
-                        .title("Query Result (↑↓ to scroll)")
-                        .borders(Borders::ALL)
-                        .fg(Color::Green)
-                } else {
-                    Block::default()
-                        .title("Query Result")
-                        .borders(Borders::ALL)
-                        .fg(Color::White)
-                };
-
-                let table = widgets::Table::new(
-                    vec![header_row].into_iter().chain(data_rows),
-                    column_widths,
-                )
-                .block(table_block)
-                .row_highlight_style(Style::default().fg(Color::White))
-                .highlight_symbol(">> ");
-
-                // Render the table with state
-                StatefulWidget::render(
-                    table,
-                    area,
-                    buf,
-                    &mut self.in_game_state.table_state.clone(),
-                );
-
-                if rows.is_empty() {
-                    return;
-                }
-
-                // Add scrollbar if there are rows
-                let scrollbar = Scrollbar::default()
-                    .orientation(ScrollbarOrientation::VerticalRight)
-                    .begin_symbol(Some("↑"))
-                    .end_symbol(Some("↓"));
-
-                let scroll_area = Rect {
-                    x: area.right() - 1,
-                    y: area.y + 1,
-                    width: 1,
-                    height: area.height - 2,
-                };
-
-                let _ = self
-                    .in_game_state
-                    .table_scroll_state
-                    .content_length(rows.len());
-
-                StatefulWidget::render(
-                    scrollbar,
-                    scroll_area,
-                    buf,
-                    &mut self.in_game_state.table_scroll_state.clone(),
-                );
-            }
+impl Default for CustomState {
+    fn default() -> Self {
+        Self {
+            table_headers: Default::default(),
+            table_rows: Ok(Default::default()),
+            inner_state: Default::default(),
+            table_scroll_state: Default::default(),
         }
+    }
+}
+
+impl CustomState {
+    fn _next(&self) -> Option<usize> {
+        self.table_rows
+            .as_ref()
+            .map(|rows| (self.inner_state.selected().unwrap_or(0) + 1) % rows.len())
+            .ok()
+    }
+    fn next(&mut self) {
+        if let Some(i) = self._next() {
+            self.inner_state.select(Some(i));
+            self.table_scroll_state.position(i);
+        }
+    }
+
+    fn _prev(&self) -> Option<usize> {
+        self.table_rows
+            .as_ref()
+            .map(|rows| {
+                let length = rows.len();
+                (self.inner_state.selected().unwrap_or(1) + length - 1) % length
+            })
+            .ok()
+    }
+
+    fn prev(&mut self) {
+        if let Some(i) = self._prev() {
+            self.inner_state.select(Some(i));
+            self.table_scroll_state.position(i);
+        }
+    }
+}
+
+fn render_error(error: String, frame: &mut WidgetFrame, chunk: Rect) -> WidgetResult {
+    let error = Paragraph::new(error)
+        .block(Block::default().title("Error").borders(Borders::ALL))
+        .style(Style::default().fg(Color::Red));
+    frame.render_widget(error, chunk);
+
+    Ok(())
+}
+
+fn render_table(
+    rows: &[SqliteRow],
+    frame: &mut WidgetFrame,
+    chunk: Rect,
+    state: &CustomState,
+    in_game_state: &InGameState,
+    global_state: &GlobalState,
+) -> WidgetResult {
+    let headers = &state.table_headers;
+    let header_count = headers.len();
+    let header_cells: Vec<_> = headers
+        .iter()
+        .map(|name| Cell::from(name.clone()).style(Style::default().fg(Color::Yellow)))
+        .collect();
+    let header_row = Row::new(header_cells);
+
+    let data_rows: Vec<_> = rows
+        .iter()
+        .map(|row| {
+            let cells: Vec<Cell> = (0..header_count)
+                .map(|column_id| {
+                    let value = match row.try_get::<String, _>(column_id) {
+                        Ok(val) => val,
+                        Err(_) => match row.try_get::<i32, _>(column_id) {
+                            Ok(val) => val.to_string(),
+                            Err(_) => "NULL".to_string(),
+                        },
+                    };
+                    Cell::from(value)
+                })
+                .collect();
+            Row::new(cells)
+        })
+        .collect();
+
+    let column_widths = vec![Constraint::Length(10); header_count];
+    let table_block = if is_focused(in_game_state, global_state) {
+        Block::default()
+            .title("Query Result (↑↓ to scroll)")
+            .borders(Borders::ALL)
+            .fg(Color::Green)
+    } else {
+        Block::default()
+            .title("Query Result")
+            .borders(Borders::ALL)
+            .fg(Color::White)
+    };
+
+    let table = widgets::Table::new(vec![header_row].into_iter().chain(data_rows), column_widths)
+        .block(table_block)
+        .row_highlight_style(Style::default().fg(Color::White))
+        .highlight_symbol(">> ");
+
+    StatefulWidget::render(
+        table,
+        chunk,
+        frame.buffer_mut(),
+        &mut state.inner_state.clone(),
+    );
+
+    if rows.is_empty() {
+        return Ok(());
+    }
+
+    // Add scrollbar if there are rows
+    let scrollbar = Scrollbar::default()
+        .orientation(ScrollbarOrientation::VerticalRight)
+        .begin_symbol(Some("↑"))
+        .end_symbol(Some("↓"));
+
+    let scroll_area = Rect {
+        x: chunk.right() - 1,
+        y: chunk.y + 1,
+        width: 1,
+        height: chunk.height - 2,
+    };
+
+    StatefulWidget::render(
+        scrollbar,
+        scroll_area,
+        frame.buffer_mut(),
+        &mut state.table_scroll_state.clone(),
+    );
+
+    Ok(())
+}
+
+pub fn render(
+    mut frame: ResMut<WidgetFrame>,
+    chunks: Res<Chunks>,
+    state: Res<CustomState>,
+    in_game_state: Res<InGameState>,
+    global_state: Res<GlobalState>,
+) -> WidgetResult {
+    if !is_focused(&in_game_state, &global_state) {
+        return Ok(());
+    }
+
+    let chunk = chunks.get_chunk::<Chunk>()?;
+
+    match &state.table_rows {
+        Err(error) => render_error(error.to_string(), &mut frame, chunk),
+        Ok(rows) => render_table(
+            rows,
+            &mut frame,
+            chunk,
+            &state,
+            &in_game_state,
+            &global_state,
+        ),
     }
 }
 
 pub fn event_handler(
     events: Res<Events>,
-    mut in_game_state: ResMut<InGameState>,
+    mut state: ResMut<CustomState>,
+    in_game_state: Res<InGameState>,
     global_state: Res<GlobalState>,
 ) -> WidgetResult {
-    if global_state.screen != Screen::InGame || in_game_state.focused_element != ID {
+    if !is_focused(&in_game_state, &global_state) {
         return Ok(());
     }
 
@@ -141,24 +215,10 @@ pub fn event_handler(
         Event::Key(KeyEvent {
             code: KeyCode::Down,
             ..
-        }) => {
-            if let Ok(ref rows) = in_game_state.table_rows {
-                let length = rows.len();
-                let i = (in_game_state.table_state.selected().unwrap_or(length - 1) + 1) % length;
-                in_game_state.table_state.select(Some(i));
-                in_game_state.table_scroll_state = in_game_state.table_scroll_state.position(i);
-            }
-        }
+        }) => state.next(),
         Event::Key(KeyEvent {
             code: KeyCode::Up, ..
-        }) => {
-            if let Ok(ref rows) = in_game_state.table_rows {
-                let length = rows.len();
-                let i = (in_game_state.table_state.selected().unwrap_or(1) + length - 1) % length;
-                in_game_state.table_state.select(Some(i));
-                in_game_state.table_scroll_state = in_game_state.table_scroll_state.position(i);
-            }
-        }
+        }) => state.prev(),
         _ => {}
     }
 
