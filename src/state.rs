@@ -1,11 +1,6 @@
 use std::sync::Arc;
 
-use ratatui::{
-    layout::Alignment,
-    widgets::{Block, Borders},
-};
 use sqlx::SqlitePool;
-use tui_textarea::TextArea;
 use widgetui::State;
 
 #[derive(Default, PartialEq, Eq)]
