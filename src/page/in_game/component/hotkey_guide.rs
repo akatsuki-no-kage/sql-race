@@ -1,23 +1,33 @@
 use ratatui::{
-    buffer::Buffer,
-    layout::Rect,
     style::Stylize,
     text::{Line, Text},
-    widgets::{Block, Borders, Paragraph, Widget},
+    widgets::{Block, Borders, Paragraph},
 };
+use widgetui::{Chunks, Res, ResMut, WidgetFrame, WidgetResult};
+
+use crate::state::{GlobalState, Screen};
 
 pub struct Chunk;
 
-pub struct HotKeyGuild;
-
 const HOTKEY: &str = "Ctrl+A: Select All / Ctrl + R: Run Query / Enter: Choose / \u{2192}, \u{2190}: Move / Esc: Menu";
 
-impl Widget for HotKeyGuild {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        let hotkey_guide = Text::from(vec![Line::from(vec![HOTKEY.green().into()])]);
-        Paragraph::new(hotkey_guide)
-            .centered()
-            .block(Block::default().borders(Borders::ALL))
-            .render(area, buf);
+pub fn render(
+    mut frame: ResMut<WidgetFrame>,
+    chunks: Res<Chunks>,
+    global_state: Res<GlobalState>,
+) -> WidgetResult {
+    if global_state.screen != Screen::InGame {
+        return Ok(());
     }
+
+    let chunk = chunks.get_chunk::<Chunk>()?;
+
+    let content = Text::from(vec![Line::from(vec![HOTKEY.green().into()])]);
+    let hotkey_guide = Paragraph::new(content)
+        .centered()
+        .block(Block::default().borders(Borders::ALL));
+
+    frame.render_widget(hotkey_guide, chunk);
+
+    Ok(())
 }
