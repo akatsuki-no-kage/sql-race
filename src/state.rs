@@ -8,6 +8,7 @@ pub enum Screen {
     #[default]
     Home,
     InGame,
+    Schema,
 }
 
 #[derive(State)]
@@ -18,7 +19,6 @@ pub struct GlobalState {
 
 impl GlobalState {
     pub fn new(pool: Arc<SqlitePool>) -> Self {
-
         Self {
             pool,
             screen: Default::default(),

@@ -1,6 +1,7 @@
 pub mod component;
 
-use component::{action, hotkey_guide, query_input, question, schema, score, table, timer};
+use anyhow::anyhow;
+use component::{hotkey_guide, query_input, question, score, table, timer};
 use ratatui::{
     crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers},
     layout::{Constraint, Direction, Layout},
@@ -21,20 +22,6 @@ use super::home::component::username_input;
 
 const COMPONENT_COUNT: usize = 4;
 
-fn finish_game(
-    username_input_state: &username_input::CustomState,
-    score_state: &score::CustomState,
-    global_state: &mut GlobalState,
-) -> WidgetResult {
-    let username = username_input_state.get_username();
-    let score = score_state.score;
-    let pool = global_state.pool.clone();
-    util::run_async(async move { model::Score::insert(username, score as i64, &pool).await })?;
-    global_state.screen = Screen::Home;
-
-    Ok(())
-}
-
 #[derive(Default, State)]
 pub struct FocusState {
     focused_element: usize,
@@ -53,37 +40,39 @@ impl FocusState {
 pub fn chunk_generator(
     frame: Res<WidgetFrame>,
     mut chunks: ResMut<Chunks>,
-    schema_state: Res<schema::CustomState>,
     global_state: Res<GlobalState>,
 ) -> WidgetResult {
-    if global_state.screen != Screen::InGame || schema_state.is_visible {
+    if global_state.screen != Screen::InGame {
         return Ok(());
     }
 
     let new_chunks = layout! {
         frame.size(),
         (#3) => { %5, %10, %85 },
-        (%70) => { %70, %30 },
-        (%25) => { %70, %30 }
+        (>0) => { %70, %30 }
+    };
+
+    let sub_chunks = layout! {
+        new_chunks[1][0],
+        (%70),
+        (%25)
     };
 
     chunks.register_chunk::<score::Chunk>(new_chunks[0][0]);
     chunks.register_chunk::<timer::Chunk>(new_chunks[0][1]);
     chunks.register_chunk::<hotkey_guide::Chunk>(new_chunks[0][2]);
 
-    chunks.register_chunk::<query_input::Chunk>(new_chunks[1][0]);
     chunks.register_chunk::<question::Chunk>(new_chunks[1][1]);
-
-    chunks.register_chunk::<table::Chunk>(new_chunks[2][0]);
-    chunks.register_chunk::<action::Chunk>(new_chunks[2][1]);
+    chunks.register_chunk::<query_input::Chunk>(sub_chunks[0][0]);
+    chunks.register_chunk::<table::Chunk>(sub_chunks[1][0]);
 
     Ok(())
 }
 
 pub fn run_query(
-    query_state: Res<query_input::CustomState>,
-    question_state: Res<question::CustomState>,
-    mut table_state: ResMut<table::CustomState>,
+    query_state: &query_input::CustomState,
+    question_state: &question::CustomState,
+    table_state: &mut table::CustomState,
 ) {
     let query = query_state.to_string();
     let raw_schema = question_state.questions[question_state.selected_question]
@@ -106,16 +95,66 @@ pub fn run_query(
     };
 }
 
+fn submit(
+    username_input_state: &username_input::CustomState,
+    query_state: &query_input::CustomState,
+    question_state: &mut question::CustomState,
+    table_state: &mut table::CustomState,
+    score_state: &mut score::CustomState,
+    global_state: &mut GlobalState,
+) -> WidgetResult {
+    if question_state.selected_question > question::QUESTION_COUNT {
+        return Ok(());
+    }
+
+    let query = query_state.to_string();
+    let question = &question_state.questions[question_state.selected_question];
+    let answer_query = question.answer.clone();
+    let raw_schema = question.raw_schema.clone();
+
+    match util::run_async(async move { util::is_correct(&query, &answer_query, &raw_schema).await })
+    {
+        Ok(true) => {
+            if question_state.selected_question == question::QUESTION_COUNT {
+                return finish_game(username_input_state, score_state, global_state);
+            }
+            score_state.score += 1;
+            question_state.selected_question += 1;
+        }
+        Ok(false) => table_state.rows = Err(anyhow!("Wrong answer")),
+        Err(error) => {
+            table_state.rows = Err(error);
+        }
+    }
+
+    Ok(())
+}
+
+fn finish_game(
+    username_input_state: &username_input::CustomState,
+    score_state: &score::CustomState,
+    global_state: &mut GlobalState,
+) -> WidgetResult {
+    let username = username_input_state.get_username();
+    let score = score_state.score;
+    let pool = global_state.pool.clone();
+    util::run_async(async move { model::Score::insert(username, score as i64, &pool).await })?;
+    global_state.screen = Screen::Home;
+
+    Ok(())
+}
+
 pub fn event_handler(
     events: Res<Events>,
     mut focus_state: ResMut<FocusState>,
-    mut schema_state: ResMut<schema::CustomState>,
+    username_input_state: Res<username_input::CustomState>,
+    mut score_state: ResMut<score::CustomState>,
     query_state: Res<query_input::CustomState>,
-    question_state: Res<question::CustomState>,
+    mut question_state: ResMut<question::CustomState>,
     mut table_state: ResMut<table::CustomState>,
     mut global_state: ResMut<GlobalState>,
 ) -> WidgetResult {
-    if global_state.screen != Screen::InGame || schema_state.is_visible {
+    if global_state.screen != Screen::InGame {
         return Ok(());
     }
 
@@ -128,7 +167,7 @@ pub fn event_handler(
             code: KeyCode::Char('q'),
             modifiers: KeyModifiers::CONTROL,
             ..
-        }) => global_state.screen = Screen::Home,
+        }) => finish_game(&username_input_state, &score_state, &mut global_state)?,
         Event::Key(KeyEvent {
             code: KeyCode::Left,
             modifiers: KeyModifiers::CONTROL,
@@ -143,17 +182,24 @@ pub fn event_handler(
             code: KeyCode::Char('r'),
             modifiers: KeyModifiers::CONTROL,
             ..
-        }) => run_query(query_state, question_state, table_state),
+        }) => run_query(&query_state, &question_state, &mut table_state),
         Event::Key(KeyEvent {
             code: KeyCode::Char('h'),
             modifiers: KeyModifiers::CONTROL,
             ..
-        }) => schema_state.is_visible = true,
-        // Event::Key(KeyEvent {
-        //     code: KeyCode::Char('s'),
-        //     modifiers: KeyModifiers::CONTROL,
-        //     ..
-        // }) => in_game_state.submit(),
+        }) => global_state.screen = Screen::Schema,
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('s'),
+            modifiers: KeyModifiers::CONTROL,
+            ..
+        }) => submit(
+            &username_input_state,
+            &query_state,
+            &mut question_state,
+            &mut table_state,
+            &mut score_state,
+            &mut global_state,
+        )?,
         _ => {}
     }
 
@@ -169,8 +215,6 @@ pub fn InGameSet(app: App) -> App {
         query_input::CustomState::default(),
         question::CustomState::default(),
         table::CustomState::default(),
-        action::CustomState::default(),
-        schema::CustomState::default(),
     ))
     .widgets((
         chunk_generator,
@@ -184,7 +228,5 @@ pub fn InGameSet(app: App) -> App {
         question::render,
         table::render,
         table::event_handler,
-        action::render,
-        action::event_handler,
     ))
 }

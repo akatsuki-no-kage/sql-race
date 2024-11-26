@@ -5,7 +5,7 @@ use widgetui::{Chunks, Res, ResMut, State, WidgetFrame, WidgetResult};
 
 use crate::{
     page::{home::component::username_input, in_game::finish_game},
-    state::{GlobalState, Screen},
+    state::GlobalState,
 };
 
 use super::score;

@@ -4,15 +4,17 @@ use ratatui::{
     style::{Color, Style},
     widgets::{Block, Borders, Cell, Clear, Row, Table, Tabs, Widget},
 };
-use widgetui::{Events, Res, ResMut, State, WidgetFrame, WidgetResult};
+use widgetui::{Chunks, Events, Res, ResMut, State, WidgetFrame, WidgetResult};
 
-use crate::state::{GlobalState, Screen};
+use crate::{
+    page::in_game::component::question,
+    state::{GlobalState, Screen},
+};
 
-use super::question;
+pub struct Chunk;
 
 #[derive(Default, State)]
 pub struct CustomState {
-    pub is_visible: bool,
     pub selected_schema: usize,
 }
 
@@ -28,13 +30,18 @@ impl CustomState {
 
 pub fn render(
     mut frame: ResMut<WidgetFrame>,
+    chunks: Res<Chunks>,
     state: Res<CustomState>,
     question_state: Res<question::CustomState>,
-    global_state: Res<GlobalState>,
 ) -> WidgetResult {
-    if global_state.screen != Screen::InGame || !state.is_visible {
+    let Ok(chunk) = chunks.get_chunk::<Chunk>() else {
         return Ok(());
-    }
+    };
+
+    let sub_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(3), Constraint::Min(0)])
+        .split(chunk);
 
     let schemas = &question_state.questions[question_state.selected_question].schemas;
     // TODO: dont return early
@@ -42,35 +49,7 @@ pub fn render(
         return Ok(());
     }
 
-    let area = frame.size();
-    let popup_area = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(
-            [
-                Constraint::Percentage(20),
-                Constraint::Percentage(60),
-                Constraint::Percentage(20),
-            ]
-            .as_ref(),
-        )
-        .split(area)[1]; // Centered vertically
-    let popup_area_horizontal = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints(
-            [
-                Constraint::Percentage(20),
-                Constraint::Percentage(60),
-                Constraint::Percentage(20),
-            ]
-            .as_ref(),
-        )
-        .split(popup_area)[1]; // Centered horizontally
-    let layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Length(3), Constraint::Min(0)])
-        .split(popup_area_horizontal);
-
-    Clear.render(area, frame.buffer_mut());
+    Clear.render(frame.size(), frame.buffer_mut());
 
     // Get tab labels for each table
     let tab_labels: Vec<_> = schemas.iter().map(|table| table.name.clone()).collect();
@@ -87,7 +66,7 @@ pub fn render(
     .highlight_style(Style::default().fg(Color::Gray).bg(Color::Black));
 
     // Render the tabs at the top area
-    frame.render_widget(tabs, layout[0]);
+    frame.render_widget(tabs, sub_chunks[0]);
 
     // Define header row for the table columns
     let headers = vec!["ID", "Name", "Type", "Not Null", "Default", "PK"];
@@ -141,7 +120,7 @@ pub fn render(
         .block(table_block)
         .row_highlight_style(Style::default().fg(Color::Green));
 
-    frame.render_widget(schema_table, layout[1]);
+    frame.render_widget(schema_table, sub_chunks[1]);
 
     Ok(())
 }
@@ -150,9 +129,9 @@ pub fn event_handler(
     events: Res<Events>,
     mut state: ResMut<CustomState>,
     question_state: Res<question::CustomState>,
-    global_state: Res<GlobalState>,
+    mut global_state: ResMut<GlobalState>,
 ) -> WidgetResult {
-    if global_state.screen != Screen::InGame || !state.is_visible {
+    if global_state.screen != Screen::Schema {
         return Ok(());
     }
 
@@ -169,7 +148,7 @@ pub fn event_handler(
             code: KeyCode::Char('q'),
             modifiers: KeyModifiers::CONTROL,
             ..
-        }) => state.is_visible = false,
+        }) => global_state.screen = Screen::InGame,
         Event::Key(KeyEvent {
             code: KeyCode::Left,
             ..

@@ -8,7 +8,7 @@ pub mod util;
 use std::sync::Arc;
 
 use anyhow::Result;
-use page::{home::HomeSet, in_game::InGameSet};
+use page::{home::HomeSet, in_game::InGameSet, schema::SchemaSet};
 use sqlx::SqlitePool;
 use state::GlobalState;
 use widgetui::App;
@@ -22,6 +22,7 @@ async fn main() -> Result<()> {
         .states(global_state)
         .sets(HomeSet)
         .sets(InGameSet)
+        .sets(SchemaSet)
         .run()?;
     Ok(())
 }

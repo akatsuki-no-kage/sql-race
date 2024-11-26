@@ -9,14 +9,13 @@ use widgetui::{Chunks, Res, ResMut, State, WidgetFrame, WidgetResult};
 use crate::{
     model::Question,
     page::in_game::FocusState,
-    state::{GlobalState, Screen},
     util,
 };
 
 pub struct Chunk;
 
 const ID: usize = 1;
-const QUESTION_COUNT: usize = 10;
+pub const QUESTION_COUNT: usize = 10;
 
 #[derive(State)]
 pub struct CustomState {
