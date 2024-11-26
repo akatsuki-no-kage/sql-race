@@ -1,1 +1,5 @@
-Question 4: Write a query to find list of patients first_name, last_name, and allergies where allergies are not null and are from the city of 'Hamilton'
+Question 4: Count the total number of cities.
+
+Hint: 
+	Use the COUNT() function to count the number of rows in the table.
+	Return total_cities.

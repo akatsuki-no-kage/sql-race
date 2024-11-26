@@ -1,3 +1,5 @@
-Question 2: Show the lengths of each of a triangle's three sides.
+Question 2: Retrieve all products priced above $500.
 
-Hint: Use the same approach as shown in Question 1.
+Hint: Use the WHERE clause to specify a condition.
+      Use the greater than operator (>) for numeric comparisons.
+

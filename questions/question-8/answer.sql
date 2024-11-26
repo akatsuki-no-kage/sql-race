@@ -1,4 +1,4 @@
-SELECT
-    DISTINCT YEAR(birth_date) AS birth_year
-FROM patients
-ORDER BY birth_year;
+SELECT category, SUM(amount) AS total_amount 
+FROM transactions 
+GROUP BY category 
+HAVING SUM(amount) > 200;

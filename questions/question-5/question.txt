@@ -1,3 +1,6 @@
-Question 5: Show how many patients have a birth_date with 2010 as the birth year.
+Question 5: Find the total sales amount.
 
+Hint: The SUM() function calculates the total of a numeric column.
+      Use it in the SELECT clause.
+      Return total_sales.
 

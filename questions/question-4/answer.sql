@@ -1,8 +1,1 @@
-SELECT
-    first_name,
-    last_name,
-    allergies
-FROM patients
-WHERE
-    city = 'Toronto'
-  and allergies is not null
+SELECT COUNT(*) AS total_cities FROM cities;
