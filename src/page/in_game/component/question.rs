@@ -6,11 +6,7 @@ use ratatui::{
 };
 use widgetui::{Chunks, Res, ResMut, State, WidgetFrame, WidgetResult};
 
-use crate::{
-    model::Question,
-    page::in_game::FocusState,
-    util,
-};
+use crate::{model::Question, page::in_game::FocusState, util};
 
 pub struct Chunk;
 
@@ -68,7 +64,9 @@ pub fn render(
     };
 
     let question = Paragraph::new(Text::from(
-        state.questions[state.selected_question].question.as_str(),
+        state.questions[state.selected_question % state.questions.len()]
+            .question
+            .as_str(),
     ))
     .block(
         Block::default()
