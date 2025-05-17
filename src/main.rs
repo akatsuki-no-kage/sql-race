@@ -18,7 +18,7 @@ async fn main() -> Result<()> {
     let pool = Arc::new(SqlitePool::connect("sqlite:score.db").await?);
     let global_state = GlobalState::new(pool.clone());
 
-    App::new(60)?
+    App::new(1)?
         .states(global_state)
         .sets(HomeSet)
         .sets(InGameSet)
