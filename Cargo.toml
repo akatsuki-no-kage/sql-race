@@ -1,3 +1,6 @@
 [workspace]
-members = [ "crates/schema","crates/tui"]
+members = [
+    "crates/database-util",
+    "crates/tui"
+]
 resolver = "3"

@@ -19,17 +19,17 @@ pub struct Column {
 }
 
 #[derive(Debug)]
-pub struct Schema {
+pub struct TableInfo {
     pub name: String,
     pub columns: Vec<Column>,
 }
 
-impl Schema {
-    async fn from_name(name: String, pool: &SqlitePool) -> sqlx::Result<Schema> {
+impl TableInfo {
+    pub async fn new(name: String, pool: &SqlitePool) -> sqlx::Result<TableInfo> {
         let columns: Vec<Column> = sqlx::query_as(&format!("PRAGMA table_info({})", &name))
             .fetch_all(pool)
             .await?;
 
-        Ok(Schema { name, columns })
+        Ok(TableInfo { name, columns })
     }
 }
