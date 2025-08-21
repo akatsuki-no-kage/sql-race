@@ -311,14 +311,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "database-util"
-version = "0.1.0"
-dependencies = [
- "futures",
- "sqlx",
-]
-
-[[package]]
 name = "der"
 version = "0.7.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1403,6 +1395,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "sql-race"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "futures",
+ "ratatui",
+ "sqlx",
+ "tokio",
+ "tokio-util",
+ "tui-textarea",
+ "widgetui",
+]
+
+[[package]]
 name = "sqlx"
 version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1826,21 +1833,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tui"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "chrono",
- "futures",
- "ratatui",
- "sqlx",
- "tokio",
- "tokio-util",
- "tui-textarea",
- "widgetui",
-]
-
-[[package]]
 name = "tui-helper-proc-macro"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1925,9 +1917,9 @@ checksum = "1fc81956842c57dac11422a97c3b8195a1ff727f06e85c84ed2e8aa277c9a0fd"
 
 [[package]]
 name = "url"
-version = "2.5.5"
+version = "2.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec961601b32b6f5d14ae8dabd35ff2ff2e2c6cb4c0e6641845ff105abe96d958"
+checksum = "137a3c834eaf7139b73688502f3f1141a0337c5d8e4d9b536f9b8c796e26a7c4"
 dependencies = [
  "form_urlencoded",
  "idna",

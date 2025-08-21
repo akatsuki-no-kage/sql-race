@@ -24,15 +24,18 @@ fn is_cell_equal_full(index: usize, first: &SqliteRow, second: &SqliteRow) -> bo
         is_cell_equal::<String>(index, first, second),
         is_cell_equal::<Vec<u8>>(index, first, second),
     ]
-    .iter()
-    .any(|&res| res == Some(true))
+    .contains(&Some(true))
 }
 
-pub fn is_row_equal(first: &SqliteRow, second: &SqliteRow) -> bool {
+pub fn is_equal(first: &SqliteRow, second: &SqliteRow) -> bool {
     if first.len() != second.len() {
         return false;
     }
     let column_count = first.len();
 
     (0..column_count).all(|index| is_cell_equal_full(index, first, second))
+}
+
+pub fn is_all_equal(first: &[SqliteRow], second: &[SqliteRow]) -> bool {
+    first.iter().zip(second).all(|(a, b)| is_equal(a, b))
 }
