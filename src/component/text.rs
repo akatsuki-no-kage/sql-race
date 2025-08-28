@@ -74,6 +74,11 @@ impl MockComponent for Text {
 }
 
 impl Text {
+    pub fn text(mut self, s: impl AsRef<str>) -> Self {
+        self.attr(Attribute::Text, AttrValue::String(s.as_ref().to_string()));
+        self
+    }
+
     pub fn title(mut self, title: Option<String>, alignment: Option<Alignment>) -> Self {
         self.attr(
             Attribute::Title,
