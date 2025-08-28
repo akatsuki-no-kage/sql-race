@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.89"
 chrono = "0.4.38"
+cli-clipboard = "0.4.0"
 config = { version = "0.15.14", default-features = false }
 rand = "0.9.2"
 ratatui = "0.29.0"
