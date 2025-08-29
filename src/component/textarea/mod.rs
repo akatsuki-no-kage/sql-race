@@ -1,7 +1,7 @@
 pub mod attribute;
 pub mod command;
 
-use cli_clipboard::{ClipboardContext, ClipboardProvider};
+use arboard::Clipboard;
 use ratatui::layout::Constraint;
 use tui_textarea::{CursorMove, TextArea as TextAreaWidget};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -144,7 +144,7 @@ impl<'a> TextArea<'a> {
     }
 
     fn paste(&mut self) {
-        if let Ok(Ok(yank)) = ClipboardContext::new().map(|mut ctx| ctx.get_contents()) {
+        if let Ok(Ok(yank)) = Clipboard::new().map(|mut ctx| ctx.get_text()) {
             if self.single_line {
                 self.widget.insert_str(yank);
             } else {
