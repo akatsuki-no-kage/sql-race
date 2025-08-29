@@ -1,9 +1,10 @@
 use tui_realm_stdlib::Table;
 use tuirealm::{
-    Component, NoUserEvent,
-    props::{Alignment, BorderSides, Borders, TableBuilder, TextSpan},
+    Component, Event, MockComponent, NoUserEvent,
+    command::{Cmd, CmdResult, Direction, Position},
+    event::{Key, KeyEvent},
+    props::{Alignment, BorderSides, Borders, TextSpan},
 };
-use tuirealm_derive::MockComponent;
 
 use crate::{app::Message, config::CONFIG, repository::ScoreRepository};
 
@@ -33,7 +34,6 @@ impl Default for ScoreTable {
                 .borders(Borders::default().sides(BorderSides::all()))
                 .title("Score", Alignment::Center)
                 .scroll(true)
-                .rewind(true)
                 .step(5)
                 .row_height(1)
                 .headers(["Username", "Score", "Time"])
@@ -43,7 +43,29 @@ impl Default for ScoreTable {
 }
 
 impl Component<Message, NoUserEvent> for ScoreTable {
-    fn on(&mut self, _: tuirealm::Event<NoUserEvent>) -> Option<Message> {
+    fn on(&mut self, event: Event<NoUserEvent>) -> Option<Message> {
+        let _ = match event {
+            Event::Keyboard(KeyEvent {
+                code: Key::Down, ..
+            }) => self.perform(Cmd::Move(Direction::Down)),
+            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
+                self.perform(Cmd::Move(Direction::Up))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::PageDown,
+                ..
+            }) => self.perform(Cmd::Scroll(Direction::Down)),
+            Event::Keyboard(KeyEvent {
+                code: Key::PageUp, ..
+            }) => self.perform(Cmd::Scroll(Direction::Up)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Home, ..
+            }) => self.perform(Cmd::GoTo(Position::Begin)),
+            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
+                self.perform(Cmd::GoTo(Position::End))
+            }
+            _ => CmdResult::None,
+        };
         Some(Message::None)
     }
 }
