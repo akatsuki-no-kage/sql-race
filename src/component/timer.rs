@@ -4,23 +4,22 @@ use ratatui::{Frame, layout::Rect};
 use tuirealm::{
     AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
     command::{Cmd, CmdResult},
+    props::{Alignment, BorderSides, Borders},
 };
 
 use crate::{Message, config::CONFIG, event::UserEvent};
 
 use super::text::Text;
 
-pub struct Timer {
-    component: Text,
+pub struct TimerStates {
     duration: Duration,
     current: Duration,
     is_stopped: bool,
 }
 
-impl Timer {
-    pub fn new(duration: Duration) -> Self {
+impl TimerStates {
+    fn new(duration: Duration) -> Self {
         Self {
-            component: Text::default(),
             duration,
             current: duration,
             is_stopped: true,
@@ -51,6 +50,36 @@ impl Timer {
     }
 }
 
+pub struct Timer {
+    component: Text,
+    pub states: TimerStates,
+}
+
+impl Timer {
+    pub fn new(duration: Duration) -> Self {
+        Self {
+            component: Text::default(),
+            states: TimerStates::new(duration),
+        }
+    }
+
+    pub fn title(mut self, title: impl AsRef<str>, alignment: Alignment) -> Self {
+        self.attr(
+            Attribute::Title,
+            AttrValue::Title((title.as_ref().to_string(), alignment)),
+        );
+        self
+    }
+
+    pub fn border(mut self, side: BorderSides) -> Self {
+        self.attr(
+            Attribute::Borders,
+            AttrValue::Borders(Borders::default().sides(side)),
+        );
+        self
+    }
+}
+
 impl MockComponent for Timer {
     fn view(&mut self, frame: &mut Frame, area: Rect) {
         self.component.view(frame, area)
@@ -65,11 +94,11 @@ impl MockComponent for Timer {
     }
 
     fn state(&self) -> State {
-        State::One(StateValue::U64(self.get_time_left()))
+        State::One(StateValue::U64(self.states.get_time_left()))
     }
 
-    fn perform(&mut self, cmd: Cmd) -> CmdResult {
-        self.component.perform(cmd)
+    fn perform(&mut self, _: Cmd) -> CmdResult {
+        CmdResult::None
     }
 }
 
@@ -77,21 +106,21 @@ impl Component<Message, UserEvent> for Timer {
     fn on(&mut self, ev: Event<UserEvent>) -> Option<Message> {
         match ev {
             Event::Tick => {
-                self.tick();
+                self.states.tick();
 
-                let time_left = self.get_time_left();
+                let time_left = self.states.get_time_left();
 
                 self.attr(Attribute::Text, AttrValue::String(time_left.to_string()));
 
                 if time_left == 0 {
-                    self.reset();
+                    self.states.reset();
                     Some(Message::End)
                 } else {
                     Some(Message::Tick)
                 }
             }
             Event::User(UserEvent::Start) => {
-                self.start();
+                self.states.start();
                 None
             }
             _ => None,
