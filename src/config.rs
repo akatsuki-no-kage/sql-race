@@ -10,6 +10,10 @@ const fn default_tick_rate() -> u64 {
     1
 }
 
+fn default_database_file() -> String {
+    "score.db".to_string()
+}
+
 fn default_question_pack_dir() -> PathBuf {
     PathBuf::from("questions")
 }
@@ -25,6 +29,9 @@ pub struct Config {
 
     #[serde(default = "default_tick_rate")]
     pub tick_rate: u64,
+
+    #[serde(default = "default_database_file")]
+    pub database_file: String,
 
     #[serde(default = "default_question_pack_dir")]
     pub question_pack_dir: PathBuf,
