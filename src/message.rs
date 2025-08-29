@@ -1,6 +1,6 @@
 #[derive(Debug, PartialEq)]
 pub enum Message {
-    AppClose,
+    Close,
     Tick,
     Start,
     End,

@@ -7,7 +7,7 @@ use tuirealm::{
 
 use crate::{
     Id, Message,
-    component::{name_input::NameInput, timer::Timer},
+    component::{name_input::NameInput, quit_listener::QuitListener, timer::Timer},
     config::CONFIG,
     event::{UserEvent, UserEventPort},
 };
@@ -45,7 +45,7 @@ where
         self.redraw = true;
 
         match message {
-            Message::AppClose => {
+            Message::Close => {
                 self.quit = true;
                 None
             }
@@ -87,6 +87,13 @@ impl Default for App<CrosstermTerminalAdapter> {
 
         app.mount(Id::NameInput, Box::new(NameInput::default()), Vec::new())
             .unwrap();
+
+        app.mount(
+            Id::QuitListener,
+            Box::new(QuitListener::default()),
+            vec![Sub::new(SubEventClause::Any, SubClause::Always)],
+        )
+        .unwrap();
 
         app.active(&Id::NameInput).unwrap();
 
