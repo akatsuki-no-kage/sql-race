@@ -6,19 +6,16 @@ use tuirealm::{
     props::{Alignment, BorderSides, Borders, Color, Style, TextSpan},
 };
 
-use crate::{app::Message, config::CONFIG, repository::ScoreRepository};
+use crate::{app::Message, repository::Score};
 
 #[derive(MockComponent)]
 pub struct ScoreTable {
     component: Table,
 }
 
-impl Default for ScoreTable {
-    fn default() -> Self {
-        let repository = ScoreRepository::new(&CONFIG.database_file).unwrap();
-        let scores = repository
-            .get_all()
-            .unwrap()
+impl ScoreTable {
+    pub fn new(scores: Vec<Score>) -> Self {
+        let scores = scores
             .into_iter()
             .map(|score| {
                 vec![
