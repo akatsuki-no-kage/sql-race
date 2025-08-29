@@ -1,4 +1,4 @@
-pub mod username_input;
+pub mod quit_listener;
 pub mod textarea;
 pub mod timer;
-pub mod quit_listener;
+pub mod username_input;
