@@ -16,12 +16,12 @@ use crate::{
     config::CONFIG,
 };
 
-pub struct TimerStates {
+pub struct OwnStates {
     time_left: Duration,
     is_disable: bool,
 }
 
-impl TimerStates {
+impl OwnStates {
     fn new(duration: Duration) -> Self {
         Self {
             time_left: duration,
@@ -46,7 +46,7 @@ impl TimerStates {
 
 pub struct Timer {
     component: Container,
-    pub states: TimerStates,
+    pub states: OwnStates,
 }
 
 impl Timer {
@@ -61,7 +61,7 @@ impl Timer {
                         .margin(1),
                 )
                 .children(vec![Box::new(Label::default())]),
-            states: TimerStates::new(duration),
+            states: OwnStates::new(duration),
         }
     }
 }
