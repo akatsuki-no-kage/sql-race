@@ -4,4 +4,5 @@ pub enum Message {
     Tick,
     Start,
     End,
+    None,
 }

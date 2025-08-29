@@ -7,7 +7,7 @@ use tuirealm::{
 
 use crate::{
     Id, Message,
-    component::timer::Timer,
+    component::{input::NameInput, timer::Timer},
     config::CONFIG,
     event::{UserEvent, UserEventPort},
 };
@@ -30,7 +30,7 @@ where
     pub fn view(&mut self) {
         self.terminal
             .draw(|f| {
-                self.inner.view(&Id::Timer, f, f.area());
+                self.inner.view(&Id::NameInput, f, f.area());
             })
             .unwrap();
     }
@@ -58,6 +58,7 @@ where
                 let _ = self.tx.send(UserEvent::End);
                 None
             }
+            Message::None => None,
         }
     }
 }
@@ -84,13 +85,16 @@ impl Default for App<CrosstermTerminalAdapter> {
         )
         .unwrap();
 
-        app.active(&Id::Timer).unwrap();
+        app.mount(Id::NameInput, Box::new(NameInput::default()), Vec::new())
+            .unwrap();
+
+        app.active(&Id::NameInput).unwrap();
 
         Self {
             inner: app,
             tx,
-            quit: Default::default(),
-            redraw: Default::default(),
+            quit: false,
+            redraw: true,
             terminal: TerminalBridge::init_crossterm().unwrap(),
         }
     }
