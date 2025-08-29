@@ -18,9 +18,13 @@ impl Default for UsernameInput {
     fn default() -> Self {
         Self {
             component: Input::default()
-                .borders(Borders::default().sides(BorderSides::all()))
+                .borders(
+                    Borders::default()
+                        .sides(BorderSides::all())
+                        .color(Color::Green),
+                )
+                .inactive(Style::reset())
                 .title("Name", Alignment::Center)
-                .inactive(Style::default().fg(Color::Green))
                 .input_type(InputType::Text)
                 .placeholder(
                     "Input your name",
