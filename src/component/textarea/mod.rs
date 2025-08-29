@@ -159,41 +159,43 @@ impl<'a> TextArea<'a> {
 
 impl MockComponent for TextArea<'_> {
     fn view(&mut self, frame: &mut Frame, area: Rect) {
-        if self.props.get_or(Attribute::Display, AttrValue::Flag(true)) == AttrValue::Flag(true) {
-            let margin = match self.get_block() {
-                Some(block) => {
-                    self.widget.set_block(block);
-                    self.props
-                        .get_or(attribute::LAYOUT_MARGIN, AttrValue::Size(1))
-                        .unwrap_size()
-                }
-                None => 0,
-            };
-
-            let focus = self
-                .props
-                .get_or(Attribute::Focus, AttrValue::Flag(false))
-                .unwrap_flag();
-            let cursor_style = if !focus {
-                Style::reset()
-            } else {
-                self.props
-                    .get_or(
-                        attribute::CURSOR_STYLE,
-                        AttrValue::Style(Style::default().add_modifier(TextModifiers::REVERSED)),
-                    )
-                    .unwrap_style()
-            };
-            self.widget.set_cursor_style(cursor_style);
-
-            let chunks = Layout::default()
-                .direction(LayoutDirection::Vertical)
-                .constraints([Constraint::Min(0)])
-                .margin(margin)
-                .split(area);
-
-            frame.render_widget(&self.widget, chunks[0]);
+        if self.props.get_or(Attribute::Display, AttrValue::Flag(true)) != AttrValue::Flag(true) {
+            return;
         }
+
+        let margin = match self.get_block() {
+            Some(block) => {
+                self.widget.set_block(block);
+                self.props
+                    .get_or(attribute::LAYOUT_MARGIN, AttrValue::Size(1))
+                    .unwrap_size()
+            }
+            None => 0,
+        };
+
+        let focus = self
+            .props
+            .get_or(Attribute::Focus, AttrValue::Flag(false))
+            .unwrap_flag();
+        let cursor_style = if !focus {
+            Style::reset()
+        } else {
+            self.props
+                .get_or(
+                    attribute::CURSOR_STYLE,
+                    AttrValue::Style(Style::default().add_modifier(TextModifiers::REVERSED)),
+                )
+                .unwrap_style()
+        };
+        self.widget.set_cursor_style(cursor_style);
+
+        let chunks = Layout::default()
+            .direction(LayoutDirection::Vertical)
+            .constraints([Constraint::Min(0)])
+            .margin(margin)
+            .split(area);
+
+        frame.render_widget(&self.widget, chunks[0]);
     }
 
     fn query(&self, attr: Attribute) -> Option<AttrValue> {
