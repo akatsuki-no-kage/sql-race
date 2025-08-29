@@ -2,12 +2,13 @@ pub mod attribute;
 pub mod command;
 
 use cli_clipboard::{ClipboardContext, ClipboardProvider};
+use ratatui::layout::Constraint;
 use tui_textarea::{CursorMove, TextArea as TextAreaWidget};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{
     Alignment, AttrValue, Attribute, Borders, PropPayload, PropValue, Props, Style, TextModifiers,
 };
-use tuirealm::ratatui::layout::{Layout, Rect};
+use tuirealm::ratatui::layout::{Direction as LayoutDirection, Layout, Rect};
 use tuirealm::ratatui::widgets::Block;
 use tuirealm::{Frame, MockComponent, State, StateValue};
 
@@ -185,7 +186,11 @@ impl MockComponent for TextArea<'_> {
             };
             self.widget.set_cursor_style(cursor_style);
 
-            let chunks = Layout::default().margin(margin).split(area);
+            let chunks = Layout::default()
+                .direction(LayoutDirection::Vertical)
+                .constraints([Constraint::Min(0)])
+                .margin(margin)
+                .split(area);
 
             frame.render_widget(&self.widget, chunks[0]);
         }
