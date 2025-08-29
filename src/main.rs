@@ -1,7 +1,6 @@
 pub mod app;
 pub mod component;
 pub mod config;
-pub mod page;
 
 use tuirealm::{PollStrategy, Update};
 
