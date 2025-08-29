@@ -1,6 +1,7 @@
 use chrono::NaiveDateTime;
 use rusqlite::Connection;
 
+#[derive(Debug)]
 pub struct Score {
     pub username: String,
     pub score: u64,
