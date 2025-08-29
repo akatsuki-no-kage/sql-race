@@ -2,4 +2,5 @@
 pub enum Id {
     Timer,
     NameInput,
+    QuitListener,
 }
