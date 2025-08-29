@@ -14,6 +14,10 @@ fn default_question_pack_dir() -> PathBuf {
     PathBuf::from("questions")
 }
 
+const fn default_question_count() -> usize {
+    10
+}
+
 #[derive(Debug, Deserialize)]
 pub struct Config {
     #[serde(default = "default_game_duration")]
@@ -24,6 +28,9 @@ pub struct Config {
 
     #[serde(default = "default_question_pack_dir")]
     pub question_pack_dir: PathBuf,
+
+    #[serde(default = "default_question_count")]
+    pub question_count: usize,
 }
 
 pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
