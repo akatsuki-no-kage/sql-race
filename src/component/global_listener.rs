@@ -8,11 +8,11 @@ use tuirealm_derive::MockComponent;
 use crate::app::Message;
 
 #[derive(MockComponent, Default)]
-pub struct QuitListener {
+pub struct GlobalListener {
     component: Phantom,
 }
 
-impl Component<Message, NoUserEvent> for QuitListener {
+impl Component<Message, NoUserEvent> for GlobalListener {
     fn on(&mut self, event: Event<NoUserEvent>) -> Option<Message> {
         match event {
             Event::Keyboard(KeyEvent {

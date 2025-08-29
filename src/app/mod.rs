@@ -16,7 +16,7 @@ use tuirealm::{
 
 use crate::{
     component::{
-        quit_listener::QuitListener, score_table::ScoreTable, timer::Timer,
+        global_listener::GlobalListener, score_table::ScoreTable, timer::Timer,
         username_input::UsernameInput,
     },
     config::CONFIG,
@@ -45,8 +45,8 @@ where
         self.umount_all();
 
         self.mount(
-            Id::QuitListener,
-            Box::new(QuitListener::default()),
+            Id::GlobalListener,
+            Box::new(GlobalListener::default()),
             vec![Sub::new(SubEventClause::Any, SubClause::Always)],
         )
         .unwrap();
