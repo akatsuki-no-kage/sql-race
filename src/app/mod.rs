@@ -1,6 +1,6 @@
 mod id;
 mod message;
-mod state;
+mod screen;
 mod ui;
 
 use std::{
@@ -19,22 +19,60 @@ use crate::{
         global_listener::GlobalListener, score_table::ScoreTable, timer::Timer,
         username_input::UsernameInput,
     },
-    config::CONFIG,
+    config::Config,
+    repository::ScoreRepository,
 };
 
 pub use id::*;
 pub use message::*;
-pub use state::*;
+pub use screen::*;
 
 pub struct App<T>
 where
     T: TerminalAdapter,
 {
     pub inner: Application<Id, Message, NoUserEvent>,
-    pub state: AppState,
+
+    pub username: Option<String>,
+
+    pub score_repository: ScoreRepository,
+
+    pub config: Config,
+
+    pub screen: Screen,
     pub quit: bool,
     pub redraw: bool,
     pub terminal: TerminalBridge<T>,
+}
+
+impl Default for App<CrosstermTerminalAdapter> {
+    fn default() -> Self {
+        let config = Config::new().unwrap();
+
+        let inner = Application::init(
+            EventListenerCfg::default()
+                .crossterm_input_listener(Duration::from_millis(20), 3)
+                .poll_timeout(Duration::from_millis(10))
+                .tick_interval(Duration::from_secs(config.tick_rate)),
+        );
+
+        let score_repository = ScoreRepository::new(&config.database_file).unwrap();
+
+        let mut app = Self {
+            inner,
+            username: None,
+            score_repository,
+            config,
+            screen: Screen::Home,
+            quit: false,
+            redraw: true,
+            terminal: TerminalBridge::init_crossterm().unwrap(),
+        };
+
+        app.mount_all();
+
+        app
+    }
 }
 
 impl<T> App<T>
@@ -51,7 +89,7 @@ where
         )
         .unwrap();
 
-        match self.state.screen {
+        match self.screen {
             Screen::Home => {
                 self.mount(
                     Id::UsernameInput,
@@ -60,7 +98,7 @@ where
                 )
                 .unwrap();
 
-                let scores = self.state.score_repository.get_all().unwrap();
+                let scores = self.score_repository.get_all().unwrap();
                 self.mount(
                     Id::ScoreTable,
                     Box::new(ScoreTable::new(scores)),
@@ -71,9 +109,13 @@ where
                 self.active(&Id::UsernameInput).unwrap();
             }
             Screen::Game => {
+                let timer = Timer::new(
+                    Duration::from_secs(self.config.game_duration),
+                    Duration::from_secs(self.config.tick_rate),
+                );
                 self.mount(
                     Id::Timer,
-                    Box::new(Timer::new(Duration::from_secs(CONFIG.game_duration))),
+                    Box::new(timer),
                     vec![Sub::new(SubEventClause::Tick, SubClause::Always)],
                 )
                 .unwrap();
@@ -88,7 +130,7 @@ where
             Some(Id::UsernameInput) => Id::ScoreTable,
             Some(Id::ScoreTable) => Id::UsernameInput,
             Some(current) => current.clone(),
-            None => match self.state.screen {
+            None => match self.screen {
                 Screen::Home => Id::UsernameInput,
                 Screen::Game => Id::Timer,
             },
@@ -100,7 +142,7 @@ where
     pub fn view(&mut self) {
         self.terminal
             .draw(|f| {
-                ui::draw(&mut self.inner, self.state.screen, f);
+                ui::draw(&mut self.inner, self.screen, f);
             })
             .unwrap();
     }
@@ -122,14 +164,14 @@ where
             }
 
             Message::Play(username) => {
-                self.state.name = Some(username);
+                self.username = Some(username);
 
                 Some(Message::ChangeScreen(Screen::Game))
             }
             Message::ChangeScreen(screen) => {
-                self.state.screen = screen;
+                self.screen = screen;
                 if matches!(screen, Screen::Home) {
-                    self.state = AppState::default();
+                    self.username = None;
                 }
 
                 self.mount_all();
@@ -143,29 +185,6 @@ where
             }
             Message::None => None,
         }
-    }
-}
-
-impl Default for App<CrosstermTerminalAdapter> {
-    fn default() -> Self {
-        let inner = Application::init(
-            EventListenerCfg::default()
-                .crossterm_input_listener(Duration::from_millis(20), 3)
-                .poll_timeout(Duration::from_millis(10))
-                .tick_interval(Duration::from_secs(CONFIG.tick_rate)),
-        );
-
-        let mut app = Self {
-            inner,
-            state: AppState::default(),
-            quit: false,
-            redraw: true,
-            terminal: TerminalBridge::init_crossterm().unwrap(),
-        };
-
-        app.mount_all();
-
-        app
     }
 }
 

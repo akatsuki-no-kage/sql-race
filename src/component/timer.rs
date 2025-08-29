@@ -11,20 +11,19 @@ use tuirealm::{
     props::{BorderSides, Borders, Layout},
 };
 
-use crate::{
-    app::{Message, Screen},
-    config::CONFIG,
-};
+use crate::app::{Message, Screen};
 
 pub struct OwnStates {
     time_left: Duration,
+    tick_rate: Duration,
     is_disable: bool,
 }
 
 impl OwnStates {
-    fn new(duration: Duration) -> Self {
+    fn new(duration: Duration, tick_rate: Duration) -> Self {
         Self {
             time_left: duration,
+            tick_rate,
             is_disable: false,
         }
     }
@@ -34,9 +33,7 @@ impl OwnStates {
             return;
         }
 
-        self.time_left = self
-            .time_left
-            .saturating_sub(Duration::from_secs(CONFIG.tick_rate));
+        self.time_left = self.time_left.saturating_sub(self.tick_rate);
     }
 
     fn get_second_left(&self) -> u64 {
@@ -50,7 +47,7 @@ pub struct Timer {
 }
 
 impl Timer {
-    pub fn new(duration: Duration) -> Self {
+    pub fn new(duration: Duration, tick_rate: Duration) -> Self {
         Self {
             component: Container::default()
                 .borders(Borders::default().sides(BorderSides::all()))
@@ -61,7 +58,7 @@ impl Timer {
                         .margin(1),
                 )
                 .children(vec![Box::new(Label::default())]),
-            states: OwnStates::new(duration),
+            states: OwnStates::new(duration, tick_rate),
         }
     }
 }

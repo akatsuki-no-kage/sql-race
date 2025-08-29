@@ -1,4 +1,4 @@
-use std::{path::PathBuf, sync::LazyLock};
+use std::path::PathBuf;
 
 use serde::Deserialize;
 
