@@ -14,7 +14,10 @@ use tuirealm::{
 };
 
 use crate::{
-    component::{quit_listener::QuitListener, timer::Timer, username_input::UsernameInput},
+    component::{
+        quit_listener::QuitListener, score_table::ScoreTable, timer::Timer,
+        username_input::UsernameInput,
+    },
     config::CONFIG,
 };
 
@@ -55,6 +58,9 @@ where
                     Vec::new(),
                 )
                 .unwrap();
+
+                self.mount(Id::ScoreTable, Box::new(ScoreTable::default()), Vec::new())
+                    .unwrap();
 
                 self.active(&Id::UsernameInput).unwrap();
             }
