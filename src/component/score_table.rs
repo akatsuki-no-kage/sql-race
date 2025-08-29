@@ -31,9 +31,13 @@ impl Default for ScoreTable {
 
         Self {
             component: Table::default()
-                .borders(Borders::default().sides(BorderSides::all()))
+                .borders(
+                    Borders::default()
+                        .sides(BorderSides::all())
+                        .color(Color::Green),
+                )
+                .inactive(Style::reset())
                 .title("Score", Alignment::Center)
-                .inactive(Style::default().fg(Color::Green))
                 .scroll(true)
                 .step(5)
                 .row_height(1)
