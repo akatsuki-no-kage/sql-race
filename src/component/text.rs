@@ -6,7 +6,7 @@ use ratatui::{
 use tuirealm::{
     AttrValue, Attribute, MockComponent, Props, State,
     command::{Cmd, CmdResult},
-    props::{Alignment, BorderSides, Borders, Color},
+    props::{Alignment, BorderSides, Borders},
 };
 
 #[derive(Default)]
@@ -29,21 +29,13 @@ impl MockComponent for Text {
             )
             .unwrap_title();
 
-        let border_color = if self.props.get_or(Attribute::Focus, AttrValue::Flag(true))
-            != AttrValue::Flag(true)
-        {
-            Color::Green
-        } else {
-            Color::White
-        };
         let borders = self
             .props
             .get_or(
                 Attribute::Borders,
                 AttrValue::Borders(Borders::default().sides(BorderSides::all())),
             )
-            .unwrap_borders()
-            .color(border_color);
+            .unwrap_borders();
 
         let widget = Paragraph::new(text).block(
             Block::new()
@@ -74,27 +66,18 @@ impl MockComponent for Text {
 }
 
 impl Text {
-    pub fn text(mut self, s: impl AsRef<str>) -> Self {
-        self.attr(Attribute::Text, AttrValue::String(s.as_ref().to_string()));
+    pub fn text(mut self, text: String) -> Self {
+        self.attr(Attribute::Text, AttrValue::String(text));
         self
     }
 
-    pub fn title(mut self, title: Option<String>, alignment: Option<Alignment>) -> Self {
-        self.attr(
-            Attribute::Title,
-            AttrValue::Title((
-                title.unwrap_or_default(),
-                alignment.unwrap_or(Alignment::Left),
-            )),
-        );
+    pub fn title(mut self, title: String, alignment: Alignment) -> Self {
+        self.attr(Attribute::Title, AttrValue::Title((title, alignment)));
         self
     }
 
-    pub fn border_side(mut self, side: BorderSides) -> Self {
-        self.attr(
-            Attribute::Borders,
-            AttrValue::Borders(Borders::default().sides(side)),
-        );
+    pub fn borders(mut self, borders: Borders) -> Self {
+        self.attr(Attribute::Borders, AttrValue::Borders(borders));
         self
     }
 }
