@@ -60,8 +60,13 @@ where
                 )
                 .unwrap();
 
-                self.mount(Id::ScoreTable, Box::new(ScoreTable::default()), Vec::new())
-                    .unwrap();
+                let scores = self.state.score_repository.get_all().unwrap();
+                self.mount(
+                    Id::ScoreTable,
+                    Box::new(ScoreTable::new(scores)),
+                    Vec::new(),
+                )
+                .unwrap();
 
                 self.active(&Id::UsernameInput).unwrap();
             }
