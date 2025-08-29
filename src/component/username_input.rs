@@ -20,6 +20,7 @@ impl Default for UsernameInput {
             component: Input::default()
                 .borders(Borders::default().sides(BorderSides::all()))
                 .title("Name", Alignment::Center)
+                .inactive(Style::default().fg(Color::Green))
                 .input_type(InputType::Text)
                 .placeholder(
                     "Input your name",
