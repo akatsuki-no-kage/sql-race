@@ -1,4 +1,4 @@
-use std::{path::PathBuf, sync::LazyLock};
+use std::path::PathBuf;
 
 use serde::Deserialize;
 
@@ -40,11 +40,11 @@ pub struct Config {
     pub question_count: usize,
 }
 
-pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
-    ::config::Config::builder()
-        .add_source(::config::Environment::default().try_parsing(true))
-        .build()
-        .unwrap()
-        .try_deserialize()
-        .unwrap()
-});
+impl Config {
+    pub fn new() -> Result<Self, config::ConfigError> {
+        config::Config::builder()
+            .add_source(config::Environment::default().try_parsing(true))
+            .build()?
+            .try_deserialize()
+    }
+}
