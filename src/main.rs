@@ -1,14 +1,10 @@
 pub mod app;
 pub mod component;
 pub mod config;
-pub mod event;
-pub mod id;
-pub mod message;
 
-pub use app::*;
-pub use id::*;
-pub use message::*;
 use tuirealm::{PollStrategy, Update};
+
+use crate::app::App;
 
 fn main() {
     let mut app = App::default();

@@ -1,3 +1,8 @@
+mod event;
+mod id;
+mod message;
+mod screen;
+
 use std::{sync::mpsc, time::Duration};
 
 use tuirealm::{
@@ -6,17 +11,21 @@ use tuirealm::{
 };
 
 use crate::{
-    Id, Message,
     component::{name_input::NameInput, quit_listener::QuitListener, timer::Timer},
     config::CONFIG,
-    event::{UserEvent, UserEventPort},
 };
+
+pub use event::*;
+pub use id::*;
+pub use message::*;
+pub use screen::*;
 
 pub struct App<T>
 where
     T: TerminalAdapter,
 {
     pub inner: Application<Id, Message, UserEvent>,
+    pub screen: Screen,
     pub tx: mpsc::Sender<UserEvent>,
     pub quit: bool,
     pub redraw: bool,
@@ -99,6 +108,7 @@ impl Default for App<CrosstermTerminalAdapter> {
 
         Self {
             inner: app,
+            screen: Screen::Home,
             tx,
             quit: false,
             redraw: true,

@@ -7,7 +7,10 @@ use tuirealm::{
     props::{Alignment, BorderSides, Borders},
 };
 
-use crate::{Message, config::CONFIG, event::UserEvent};
+use crate::{
+    app::{Message, UserEvent},
+    config::CONFIG,
+};
 
 use super::text::Text;
 
@@ -97,8 +100,8 @@ impl MockComponent for Timer {
         State::One(StateValue::U64(self.states.get_time_left()))
     }
 
-    fn perform(&mut self, _: Cmd) -> CmdResult {
-        CmdResult::None
+    fn perform(&mut self, cmd: Cmd) -> CmdResult {
+        self.component.perform(cmd)
     }
 }
 

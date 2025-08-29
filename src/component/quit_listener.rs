@@ -5,7 +5,7 @@ use tuirealm::{
 };
 use tuirealm_derive::MockComponent;
 
-use crate::{Message, event::UserEvent};
+use crate::app::{Message, UserEvent};
 
 #[derive(MockComponent, Default)]
 pub struct QuitListener {

@@ -7,7 +7,7 @@ use tuirealm::{
     props::{Alignment, BorderSides, Borders, InputType, TextModifiers},
 };
 
-use crate::{Message, event::UserEvent};
+use crate::app::{Message, UserEvent};
 
 #[derive(MockComponent)]
 pub struct NameInput {
