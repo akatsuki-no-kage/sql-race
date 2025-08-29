@@ -1,32 +1,33 @@
-mod event;
 mod id;
 mod message;
-mod screen;
+mod state;
+mod ui;
 
-use std::{sync::mpsc, time::Duration};
+use std::{
+    ops::{Deref, DerefMut},
+    time::Duration,
+};
 
 use tuirealm::{
-    Application, EventListenerCfg, Sub, SubClause, SubEventClause, Update,
+    Application, EventListenerCfg, NoUserEvent, Sub, SubClause, SubEventClause, Update,
     terminal::{CrosstermTerminalAdapter, TerminalAdapter, TerminalBridge},
 };
 
 use crate::{
-    component::{name_input::NameInput, quit_listener::QuitListener, timer::Timer},
+    component::{quit_listener::QuitListener, timer::Timer, username_input::UsernameInput},
     config::CONFIG,
 };
 
-pub use event::*;
 pub use id::*;
 pub use message::*;
-pub use screen::*;
+pub use state::*;
 
 pub struct App<T>
 where
     T: TerminalAdapter,
 {
-    pub inner: Application<Id, Message, UserEvent>,
-    pub screen: Screen,
-    pub tx: mpsc::Sender<UserEvent>,
+    pub inner: Application<Id, Message, NoUserEvent>,
+    pub state: AppState,
     pub quit: bool,
     pub redraw: bool,
     pub terminal: TerminalBridge<T>,
@@ -36,10 +37,44 @@ impl<T> App<T>
 where
     T: TerminalAdapter,
 {
+    fn mount_all(&mut self) {
+        self.umount_all();
+
+        self.mount(
+            Id::QuitListener,
+            Box::new(QuitListener::default()),
+            vec![Sub::new(SubEventClause::Any, SubClause::Always)],
+        )
+        .unwrap();
+
+        match self.state.screen {
+            Screen::Home => {
+                self.mount(
+                    Id::UsernameInput,
+                    Box::new(UsernameInput::default()),
+                    Vec::new(),
+                )
+                .unwrap();
+
+                self.active(&Id::UsernameInput).unwrap();
+            }
+            Screen::Game => {
+                self.mount(
+                    Id::Timer,
+                    Box::new(Timer::new(Duration::from_secs(CONFIG.game_duration))),
+                    vec![Sub::new(SubEventClause::Tick, SubClause::Always)],
+                )
+                .unwrap();
+
+                self.active(&Id::Timer).unwrap();
+            }
+        }
+    }
+
     pub fn view(&mut self) {
         self.terminal
             .draw(|f| {
-                self.inner.view(&Id::NameInput, f, f.area());
+                ui::draw(&mut self.inner, self.state.screen, f);
             })
             .unwrap();
     }
@@ -56,56 +91,62 @@ where
         match message {
             Message::Close => {
                 self.quit = true;
+
                 None
             }
-            Message::Tick => None,
             Message::ChangeScreen(screen) => {
-                let _ = self.tx.send(UserEvent::ChangeScreen(screen));
+                self.state.screen = screen;
+                if matches!(screen, Screen::Home) {
+                    self.state = AppState::default();
+                }
+
+                self.mount_all();
+
                 None
             }
             Message::None => None,
+            Message::Play(username) => {
+                self.state.name = Some(username);
+
+                Some(Message::ChangeScreen(Screen::Game))
+            }
         }
     }
 }
 
 impl Default for App<CrosstermTerminalAdapter> {
     fn default() -> Self {
-        let (tx, rx) = mpsc::channel();
-
-        let mut app = Application::init(
+        let inner = Application::init(
             EventListenerCfg::default()
                 .crossterm_input_listener(Duration::from_millis(20), 3)
-                .add_port(Box::new(UserEventPort { rx }), Duration::from_millis(20), 1)
                 .poll_timeout(Duration::from_millis(10))
-                .tick_interval(Duration::from_secs(1)),
+                .tick_interval(Duration::from_secs(CONFIG.tick_rate)),
         );
 
-        app.mount(
-            Id::Timer,
-            Box::new(Timer::new(Duration::from_millis(CONFIG.game_duration))),
-            vec![Sub::new(SubEventClause::Any, SubClause::Always)],
-        )
-        .unwrap();
-
-        app.mount(Id::NameInput, Box::new(NameInput::default()), Vec::new())
-            .unwrap();
-
-        app.mount(
-            Id::QuitListener,
-            Box::new(QuitListener::default()),
-            vec![Sub::new(SubEventClause::Any, SubClause::Always)],
-        )
-        .unwrap();
-
-        app.active(&Id::NameInput).unwrap();
-
-        Self {
-            inner: app,
-            screen: Screen::Home,
-            tx,
+        let mut app = Self {
+            inner,
+            state: AppState::default(),
             quit: false,
             redraw: true,
             terminal: TerminalBridge::init_crossterm().unwrap(),
-        }
+        };
+
+        app.mount_all();
+
+        app
+    }
+}
+
+impl<T: TerminalAdapter> Deref for App<T> {
+    type Target = Application<Id, Message, NoUserEvent>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl<T: TerminalAdapter> DerefMut for App<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
     }
 }

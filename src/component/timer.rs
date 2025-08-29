@@ -2,54 +2,43 @@ use std::time::Duration;
 
 use ratatui::{Frame, layout::Rect};
 use tuirealm::{
-    AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
+    AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent, State, StateValue,
     command::{Cmd, CmdResult},
     props::{Alignment, BorderSides, Borders},
 };
 
 use crate::{
-    app::{Message, Screen, UserEvent},
+    app::{Message, Screen},
     config::CONFIG,
 };
 
 use super::text::Text;
 
 pub struct TimerStates {
-    duration: Duration,
-    current: Duration,
-    is_stopped: bool,
+    time_left: Duration,
+    is_disable: bool,
 }
 
 impl TimerStates {
     fn new(duration: Duration) -> Self {
         Self {
-            duration,
-            current: duration,
-            is_stopped: true,
+            time_left: duration,
+            is_disable: false,
         }
-    }
-
-    fn start(&mut self) {
-        self.is_stopped = false;
     }
 
     fn tick(&mut self) {
-        if self.is_stopped {
+        if self.is_disable {
             return;
         }
 
-        self.current = self
-            .current
-            .saturating_sub(Duration::from_millis(CONFIG.tick_rate));
+        self.time_left = self
+            .time_left
+            .saturating_sub(Duration::from_secs(CONFIG.tick_rate));
     }
 
-    fn get_time_left(&self) -> u64 {
-        self.current.as_secs()
-    }
-
-    fn reset(&mut self) {
-        self.current = self.duration;
-        self.is_stopped = true;
+    fn get_second_left(&self) -> u64 {
+        self.time_left.as_secs()
     }
 }
 
@@ -97,7 +86,7 @@ impl MockComponent for Timer {
     }
 
     fn state(&self) -> State {
-        State::One(StateValue::U64(self.states.get_time_left()))
+        State::One(StateValue::U64(self.states.get_second_left()))
     }
 
     fn perform(&mut self, cmd: Cmd) -> CmdResult {
@@ -105,26 +94,25 @@ impl MockComponent for Timer {
     }
 }
 
-impl Component<Message, UserEvent> for Timer {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Message> {
-        match ev {
+impl Component<Message, NoUserEvent> for Timer {
+    fn on(&mut self, event: Event<NoUserEvent>) -> Option<Message> {
+        match event {
             Event::Tick => {
                 self.states.tick();
 
-                let time_left = self.states.get_time_left();
+                let second_left = self.states.get_second_left();
 
-                self.attr(Attribute::Text, AttrValue::String(time_left.to_string()));
+                self.attr(Attribute::Text, AttrValue::String(second_left.to_string()));
 
-                if time_left == 0 {
-                    self.states.reset();
-                    Some(Message::ChangeScreen(Screen::Home))
-                } else {
-                    Some(Message::Tick)
+                if second_left > 0 {
+                    return Some(Message::None);
                 }
-            }
-            Event::User(UserEvent::ChangeScreen(Screen::Game)) => {
-                self.states.start();
-                None
+
+                if self.states.is_disable {
+                    None
+                } else {
+                    Some(Message::ChangeScreen(Screen::Home))
+                }
             }
             _ => None,
         }

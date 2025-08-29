@@ -1,20 +1,20 @@
 use ratatui::style::{Color, Style};
 use tui_realm_stdlib::Input;
 use tuirealm::{
-    Component, Event, MockComponent,
+    Component, Event, MockComponent, NoUserEvent, State, StateValue,
     command::{Cmd, CmdResult, Direction, Position},
     event::{Key, KeyEvent, KeyModifiers},
     props::{Alignment, BorderSides, Borders, InputType, TextModifiers},
 };
 
-use crate::app::{Message, UserEvent};
+use crate::app::Message;
 
 #[derive(MockComponent)]
-pub struct NameInput {
+pub struct UsernameInput {
     component: Input,
 }
 
-impl Default for NameInput {
+impl Default for UsernameInput {
     fn default() -> Self {
         Self {
             component: Input::default()
@@ -32,9 +32,9 @@ impl Default for NameInput {
     }
 }
 
-impl Component<Message, UserEvent> for NameInput {
-    fn on(&mut self, event: Event<UserEvent>) -> Option<Message> {
-        let _ = match event {
+impl Component<Message, NoUserEvent> for UsernameInput {
+    fn on(&mut self, event: Event<NoUserEvent>) -> Option<Message> {
+        let cmd_result = match event {
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
             }) => self.perform(Cmd::Move(Direction::Left)),
@@ -55,11 +55,19 @@ impl Component<Message, UserEvent> for NameInput {
                 ..
             }) => self.perform(Cmd::Delete),
             Event::Keyboard(KeyEvent {
+                code: Key::Enter,
+                ..
+            }) => self.perform(Cmd::Submit),
+            Event::Keyboard(KeyEvent {
                 code: Key::Char(ch),
                 modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Type(ch)),
             _ => CmdResult::None,
         };
-        Some(Message::None)
+
+        match cmd_result {
+            CmdResult::Submit(State::One(StateValue::String(name))) => Some(Message::Play(name)),
+            _ => Some(Message::None),
+        }
     }
 }
