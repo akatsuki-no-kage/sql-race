@@ -7,7 +7,7 @@ use tuirealm::{
 
 use crate::{
     Id, Message,
-    component::{input::NameInput, timer::Timer},
+    component::{name_input::NameInput, timer::Timer},
     config::CONFIG,
     event::{UserEvent, UserEventPort},
 };

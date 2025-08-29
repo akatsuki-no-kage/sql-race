@@ -1,7 +1,7 @@
-use ratatui::{Frame, layout::Rect, style::Style};
+use ratatui::style::Style;
 use tuirealm::{
-    AttrValue, Attribute, Component, Event, MockComponent, State,
-    command::{Cmd, CmdResult, Direction, Position},
+    Component, Event, MockComponent,
+    command::{Cmd, Direction, Position},
     event::{Key, KeyEvent, KeyModifiers},
     props::{Alignment, BorderSides, Borders},
 };
