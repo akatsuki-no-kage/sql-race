@@ -1,4 +1,4 @@
-use std::{fs, io, path::PathBuf};
+use std::{fs, io, path::Path};
 
 use rand::seq::IteratorRandom;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
@@ -60,45 +60,38 @@ impl Schema {
     }
 }
 
-#[derive(Debug)]
-pub struct Question {
-    pub question: String,
-    pub answer: String,
-    pub schema: Schema,
-}
+pub type QuestionPack = (Vec<String>, Vec<String>, Vec<Schema>);
 
 #[derive(Default)]
-pub struct QuestionRepository {
-    pub question_pack_dir: PathBuf,
-}
+pub struct QuestionPackRepository;
 
-impl QuestionRepository {
-    pub fn new(question_pack_dir: PathBuf) -> Self {
-        Self { question_pack_dir }
-    }
-
-    pub fn get_multiple(&self, count: usize) -> io::Result<Vec<Question>> {
-        let mut question_dirs = fs::read_dir(&self.question_pack_dir)?
+impl QuestionPackRepository {
+    pub fn get(&self, dir: &Path, sample_size: usize) -> io::Result<QuestionPack> {
+        let mut question_dirs = fs::read_dir(dir)?
             .filter_map(|x| x.ok().map(|x| x.path()))
-            .choose_multiple(&mut rand::rng(), count);
+            .choose_multiple(&mut rand::rng(), sample_size);
         question_dirs.sort();
 
-        question_dirs
+        let questions = question_dirs
+            .clone()
+            .par_iter()
+            .map(|dir| fs::read_to_string(dir.join("question.txt")))
+            .collect::<Result<_, io::Error>>()?;
+
+        let answers = question_dirs
+            .clone()
+            .par_iter()
+            .map(|dir| fs::read_to_string(dir.join("answer.sql")))
+            .collect::<Result<_, io::Error>>()?;
+
+        let schemas = question_dirs
             .par_iter()
             .map(|dir| {
-                let question = fs::read_to_string(dir.join("question.txt"))?;
-
-                let answer = fs::read_to_string(dir.join("answer.sql"))?;
-
                 let raw_schema = fs::read_to_string(dir.join("schema.sql"))?;
-                let schema = Schema::new(raw_schema).map_err(io::Error::other)?;
-
-                Ok::<_, io::Error>(Question {
-                    question,
-                    answer,
-                    schema,
-                })
+                Schema::new(raw_schema).map_err(io::Error::other)
             })
-            .collect()
+            .collect::<Result<_, io::Error>>()?;
+
+        Ok((questions, answers, schemas))
     }
 }
