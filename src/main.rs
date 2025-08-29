@@ -1,28 +1,40 @@
-#![feature(iterator_try_collect)]
+pub mod app;
+pub mod component;
+pub mod config;
+pub mod repository;
 
-pub mod model;
-pub mod page;
-pub mod state;
-pub mod util;
+use tuirealm::{PollStrategy, Update};
 
-use std::sync::Arc;
+use crate::app::App;
 
-use anyhow::Result;
-use page::{home::HomeSet, in_game::InGameSet, schema::SchemaSet};
-use sqlx::SqlitePool;
-use state::GlobalState;
-use widgetui::App;
+fn main() {
+    let mut app = App::default();
 
-#[tokio::main]
-async fn main() -> Result<()> {
-    let pool = Arc::new(SqlitePool::connect("sqlite:score.db").await?);
-    let global_state = GlobalState::new(pool.clone());
+    app.terminal.enter_alternate_screen().unwrap();
+    app.terminal.enable_raw_mode().unwrap();
 
-    App::new(1)?
-        .states(global_state)
-        .sets(HomeSet)
-        .sets(InGameSet)
-        .sets(SchemaSet)
-        .run()?;
-    Ok(())
+    while !app.quit {
+        match app.inner.tick(PollStrategy::Once) {
+            Ok(messages) if !messages.is_empty() => {
+                app.redraw = true;
+                for message in messages {
+                    let mut message = Some(message);
+                    while message.is_some() {
+                        message = app.update(message);
+                    }
+                }
+            }
+            Err(_) => {}
+            _ => {}
+        }
+
+        if app.redraw {
+            app.view();
+            app.redraw = false;
+        }
+    }
+
+    app.terminal.leave_alternate_screen().unwrap();
+    app.terminal.disable_raw_mode().unwrap();
+    app.terminal.clear_screen().unwrap();
 }
