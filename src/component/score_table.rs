@@ -3,7 +3,7 @@ use tuirealm::{
     Component, Event, MockComponent, NoUserEvent,
     command::{Cmd, CmdResult, Direction, Position},
     event::{Key, KeyEvent},
-    props::{Alignment, BorderSides, Borders, TextSpan},
+    props::{Alignment, BorderSides, Borders, Color, Style, TextSpan},
 };
 
 use crate::{app::Message, config::CONFIG, repository::ScoreRepository};
@@ -33,6 +33,7 @@ impl Default for ScoreTable {
             component: Table::default()
                 .borders(Borders::default().sides(BorderSides::all()))
                 .title("Score", Alignment::Center)
+                .inactive(Style::default().fg(Color::Green))
                 .scroll(true)
                 .step(5)
                 .row_height(1)

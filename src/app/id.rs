@@ -3,5 +3,5 @@ pub enum Id {
     Timer,
     ScoreTable,
     UsernameInput,
-    QuitListener,
+    GlobalListener,
 }
