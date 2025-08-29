@@ -10,6 +10,7 @@ use std::{
 
 use tuirealm::{
     Application, EventListenerCfg, NoUserEvent, Sub, SubClause, SubEventClause, Update,
+    application::ApplicationResult,
     terminal::{CrosstermTerminalAdapter, TerminalAdapter, TerminalBridge},
 };
 
@@ -77,6 +78,20 @@ where
         }
     }
 
+    fn active_next(&mut self) -> ApplicationResult<()> {
+        let next = match self.inner.focus() {
+            Some(Id::UsernameInput) => Id::ScoreTable,
+            Some(Id::ScoreTable) => Id::UsernameInput,
+            Some(current) => current.clone(),
+            None => match self.state.screen {
+                Screen::Home => Id::UsernameInput,
+                Screen::Game => Id::Timer,
+            },
+        };
+
+        self.active(&next)
+    }
+
     pub fn view(&mut self) {
         self.terminal
             .draw(|f| {
@@ -100,6 +115,12 @@ where
 
                 None
             }
+
+            Message::Play(username) => {
+                self.state.name = Some(username);
+
+                Some(Message::ChangeScreen(Screen::Game))
+            }
             Message::ChangeScreen(screen) => {
                 self.state.screen = screen;
                 if matches!(screen, Screen::Home) {
@@ -110,12 +131,12 @@ where
 
                 None
             }
-            Message::None => None,
-            Message::Play(username) => {
-                self.state.name = Some(username);
+            Message::FocusNext => {
+                self.active_next().unwrap();
 
-                Some(Message::ChangeScreen(Screen::Game))
+                None
             }
+            Message::None => None,
         }
     }
 }
