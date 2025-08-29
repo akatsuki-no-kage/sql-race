@@ -1,18 +1,20 @@
 use std::time::Duration;
 
-use ratatui::{Frame, layout::Rect};
+use ratatui::{
+    Frame,
+    layout::{Constraint, Direction, Rect},
+};
+use tui_realm_stdlib::{Container, Label};
 use tuirealm::{
     AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent, State, StateValue,
     command::{Cmd, CmdResult},
-    props::{Alignment, BorderSides, Borders},
+    props::{BorderSides, Borders, Layout},
 };
 
 use crate::{
     app::{Message, Screen},
     config::CONFIG,
 };
-
-use super::text::Text;
 
 pub struct TimerStates {
     time_left: Duration,
@@ -43,32 +45,24 @@ impl TimerStates {
 }
 
 pub struct Timer {
-    component: Text,
+    component: Container,
     pub states: TimerStates,
 }
 
 impl Timer {
     pub fn new(duration: Duration) -> Self {
         Self {
-            component: Text::default(),
+            component: Container::default()
+                .borders(Borders::default().sides(BorderSides::all()))
+                .layout(
+                    Layout::default()
+                        .constraints(&[Constraint::Min(0)])
+                        .direction(Direction::Horizontal)
+                        .margin(1),
+                )
+                .children(vec![Box::new(Label::default())]),
             states: TimerStates::new(duration),
         }
-    }
-
-    pub fn title(mut self, title: impl AsRef<str>, alignment: Alignment) -> Self {
-        self.attr(
-            Attribute::Title,
-            AttrValue::Title((title.as_ref().to_string(), alignment)),
-        );
-        self
-    }
-
-    pub fn border(mut self, side: BorderSides) -> Self {
-        self.attr(
-            Attribute::Borders,
-            AttrValue::Borders(Borders::default().sides(side)),
-        );
-        self
     }
 }
 
