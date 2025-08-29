@@ -12,6 +12,7 @@ use crate::{
     event::UserEvent,
 };
 
+#[derive(MockComponent)]
 pub struct NameInput<'a> {
     component: TextArea<'a>,
 }
@@ -25,28 +26,6 @@ impl Default for NameInput<'_> {
                 .cursor_line_style(Style::default())
                 .title("Name", Alignment::Center),
         }
-    }
-}
-
-impl MockComponent for NameInput<'_> {
-    fn view(&mut self, frame: &mut Frame, area: Rect) {
-        self.component.view(frame, area)
-    }
-
-    fn query(&self, attr: Attribute) -> Option<AttrValue> {
-        self.component.query(attr)
-    }
-
-    fn attr(&mut self, attr: Attribute, value: AttrValue) {
-        self.component.attr(attr, value)
-    }
-
-    fn state(&self) -> State {
-        self.component.state()
-    }
-
-    fn perform(&mut self, cmd: Cmd) -> CmdResult {
-        self.component.perform(cmd)
     }
 }
 

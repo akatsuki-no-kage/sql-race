@@ -1056,6 +1056,7 @@ dependencies = [
  "serde",
  "tui-textarea",
  "tuirealm",
+ "tuirealm_derive",
 ]
 
 [[package]]
