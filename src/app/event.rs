@@ -5,12 +5,11 @@ use tuirealm::{
     listener::{ListenerResult, Poll},
 };
 
-use crate::config::CONFIG;
+use crate::{app::Screen, config::CONFIG};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 pub enum UserEvent {
-    Start,
-    End,
+    ChangeScreen(Screen),
 }
 
 pub struct UserEventPort {

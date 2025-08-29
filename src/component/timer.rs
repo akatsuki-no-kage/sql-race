@@ -8,7 +8,7 @@ use tuirealm::{
 };
 
 use crate::{
-    app::{Message, UserEvent},
+    app::{Message, Screen, UserEvent},
     config::CONFIG,
 };
 
@@ -117,12 +117,12 @@ impl Component<Message, UserEvent> for Timer {
 
                 if time_left == 0 {
                     self.states.reset();
-                    Some(Message::End)
+                    Some(Message::ChangeScreen(Screen::Home))
                 } else {
                     Some(Message::Tick)
                 }
             }
-            Event::User(UserEvent::Start) => {
+            Event::User(UserEvent::ChangeScreen(Screen::Game)) => {
                 self.states.start();
                 None
             }

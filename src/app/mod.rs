@@ -59,12 +59,8 @@ where
                 None
             }
             Message::Tick => None,
-            Message::Start => {
-                let _ = self.tx.send(UserEvent::Start);
-                None
-            }
-            Message::End => {
-                let _ = self.tx.send(UserEvent::End);
+            Message::ChangeScreen(screen) => {
+                let _ = self.tx.send(UserEvent::ChangeScreen(screen));
                 None
             }
             Message::None => None,
@@ -87,10 +83,7 @@ impl Default for App<CrosstermTerminalAdapter> {
         app.mount(
             Id::Timer,
             Box::new(Timer::new(Duration::from_millis(CONFIG.game_duration))),
-            vec![Sub::new(
-                SubEventClause::User(UserEvent::Start),
-                SubClause::Always,
-            )],
+            vec![Sub::new(SubEventClause::Any, SubClause::Always)],
         )
         .unwrap();
 
