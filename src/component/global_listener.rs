@@ -19,7 +19,7 @@ impl Component<Message, NoUserEvent> for GlobalListener {
                 code: Key::Char('q'),
                 modifiers: KeyModifiers::CONTROL,
             }) => Some(Message::Close),
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => Some(Message::FocusNext),
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => Some(Message::ActiveNext),
             _ => None,
         }
     }

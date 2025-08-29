@@ -5,6 +5,6 @@ pub enum Message {
     Close,
     Play(String),
     ChangeScreen(Screen),
-    FocusNext,
+    ActiveNext,
     None,
 }

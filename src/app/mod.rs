@@ -131,7 +131,7 @@ where
 
                 None
             }
-            Message::FocusNext => {
+            Message::ActiveNext => {
                 self.active_next().unwrap();
 
                 None
