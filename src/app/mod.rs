@@ -1,22 +1,18 @@
 mod id;
 mod message;
-mod mount;
 mod screen;
-mod ui;
-mod update;
 
-use std::{
-    ops::{Deref, DerefMut},
-    time::Duration,
-};
+use std::time::Duration;
 
+use ratatui::layout::{Constraint, Layout, Rect};
 use tuirealm::{
-    Application, EventListenerCfg, NoUserEvent,
+    Application, Component, EventListenerCfg, NoUserEvent, Sub, SubClause, SubEventClause, Update,
     application::ApplicationResult,
     terminal::{CrosstermTerminalAdapter, TerminalAdapter, TerminalBridge},
 };
 
 use crate::{
+    component::{Editor, GlobalListener, ScoreTable, Timer, UsernameInput},
     config::Config,
     repository::{self, question::Question},
 };
@@ -25,10 +21,7 @@ pub use id::*;
 pub use message::*;
 pub use screen::*;
 
-pub struct App<T>
-where
-    T: TerminalAdapter,
-{
+pub struct App<T: TerminalAdapter> {
     pub inner: Application<Id, Message, NoUserEvent>,
 
     pub username: Option<String>,
@@ -41,29 +34,6 @@ where
     pub quit: bool,
     pub redraw: bool,
     pub terminal: TerminalBridge<T>,
-}
-
-impl<T> App<T>
-where
-    T: TerminalAdapter,
-{
-    fn active_next(&mut self) -> ApplicationResult<()> {
-        let next = match self.inner.focus() {
-            Some(Id::UsernameInput) => Some(Id::ScoreTable),
-            Some(Id::ScoreTable) => Some(Id::UsernameInput),
-            None => Some(match self.screen {
-                Screen::Home => Id::UsernameInput,
-                Screen::Game => Id::Editor,
-            }),
-            _ => None,
-        };
-
-        if let Some(next) = next {
-            self.active(&next)
-        } else {
-            Ok(())
-        }
-    }
 }
 
 impl Default for App<CrosstermTerminalAdapter> {
@@ -96,22 +66,173 @@ impl Default for App<CrosstermTerminalAdapter> {
             terminal: TerminalBridge::init_crossterm().unwrap(),
         };
 
-        app.mount_all();
+        app.change_screen(Screen::Home);
 
         app
     }
 }
 
-impl<T: TerminalAdapter> Deref for App<T> {
-    type Target = Application<Id, Message, NoUserEvent>;
+impl<T> Update<Message> for App<T>
+where
+    T: TerminalAdapter,
+{
+    fn update(&mut self, message: Option<Message>) -> Option<Message> {
+        let message = message?;
+        self.redraw = true;
 
-    fn deref(&self) -> &Self::Target {
-        &self.inner
+        match message {
+            Message::Close => {
+                self.quit = true;
+
+                None
+            }
+
+            Message::Start(username) => {
+                self.username = Some(username);
+                self.question_index = 0;
+
+                Some(Message::ChangeScreen(Screen::Game))
+            }
+
+            Message::NextQuestion => {
+                self.question_index += 1;
+
+                if self.question_index == self.questions.len() {
+                    Some(Message::End)
+                } else {
+                    None
+                }
+            }
+
+            Message::End => {
+                self.username = None;
+                self.question_index = 0;
+
+                Some(Message::ChangeScreen(Screen::Home))
+            }
+
+            Message::ChangeScreen(screen) => {
+                self.change_screen(screen);
+
+                None
+            }
+
+            Message::ActiveNext => {
+                self.active_next().unwrap();
+
+                None
+            }
+
+            Message::None => None,
+        }
     }
 }
 
-impl<T: TerminalAdapter> DerefMut for App<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
+impl<T: TerminalAdapter> App<T> {
+    fn get_components(screen: Screen, area: Rect) -> Vec<(Id, Rect)> {
+        match screen {
+            Screen::Home => {
+                let margined_chunks = Layout::horizontal([
+                    Constraint::Min(0),
+                    Constraint::Max(80),
+                    Constraint::Min(0),
+                ])
+                .margin(2)
+                .split(area);
+
+                let chunks = Layout::vertical([Constraint::Min(0), Constraint::Length(3)])
+                    .split(margined_chunks[1]);
+
+                vec![(Id::ScoreTable, chunks[0]), (Id::UsernameInput, chunks[1])]
+            }
+            Screen::Game => {
+                let chunks =
+                    Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(area);
+
+                vec![(Id::Timer, chunks[0]), (Id::Editor, chunks[1])]
+            }
+        }
+    }
+
+    pub fn view(&mut self) {
+        self.terminal
+            .draw(|f| {
+                let components = Self::get_components(self.screen, f.area());
+
+                for (id, chunk) in components {
+                    self.inner.view(&id, f, chunk);
+                }
+            })
+            .unwrap();
+    }
+
+    fn remount(&mut self, id: Id) {
+        let (component, subs): (Box<dyn Component<_, _>>, _) = match id {
+            Id::GlobalListener => (
+                Box::new(GlobalListener::default()),
+                vec![Sub::new(SubEventClause::Any, SubClause::Always)],
+            ),
+
+            Id::ScoreTable => {
+                let scores = repository::score::get_all(&self.config.database_file).unwrap();
+
+                (Box::new(ScoreTable::new(scores)), Vec::new())
+            }
+
+            Id::UsernameInput => (Box::new(UsernameInput::default()), Vec::new()),
+
+            Id::Timer => (
+                Box::new(Timer::new(
+                    Duration::from_secs(self.config.game_duration),
+                    Duration::from_secs(self.config.tick_rate),
+                )),
+                vec![Sub::new(SubEventClause::Tick, SubClause::Always)],
+            ),
+
+            Id::Editor => (Box::new(Editor::default()), Vec::new()),
+        };
+
+        self.inner.remount(id, component, subs).unwrap();
+    }
+
+    fn change_screen(&mut self, screen: Screen) {
+        self.screen = screen;
+
+        self.inner.umount_all();
+
+        self.remount(Id::GlobalListener);
+
+        match screen {
+            Screen::Home => {
+                self.remount(Id::ScoreTable);
+                self.remount(Id::UsernameInput);
+
+                self.inner.active(&Id::UsernameInput).unwrap();
+            }
+            Screen::Game => {
+                self.remount(Id::Timer);
+                self.remount(Id::Editor);
+
+                self.inner.active(&Id::Editor).unwrap();
+            }
+        }
+    }
+
+    fn active_next(&mut self) -> ApplicationResult<()> {
+        let next = match self.inner.focus() {
+            Some(Id::UsernameInput) => Some(Id::ScoreTable),
+            Some(Id::ScoreTable) => Some(Id::UsernameInput),
+            None => Some(match self.screen {
+                Screen::Home => Id::UsernameInput,
+                Screen::Game => Id::Editor,
+            }),
+            _ => None,
+        };
+
+        if let Some(next) = next {
+            self.inner.active(&next)
+        } else {
+            Ok(())
+        }
     }
 }
