@@ -140,10 +140,12 @@ impl<T: TerminalAdapter> App<T> {
         self.question_index += 1;
 
         if self.question_index == self.questions.len() {
-            Some(Message::End)
-        } else {
-            None
+            return Some(Message::End);
         }
+
+        self.remount(Id::Editor);
+
+        Some(Message::None)
     }
 
     fn end(&mut self) -> Option<Message> {
