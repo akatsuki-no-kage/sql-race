@@ -12,7 +12,8 @@ use tuirealm::{
 
 use crate::{
     component::{
-        Editor, GlobalListener, Question, ResultTable, Score, ScoreTable, Timer, UsernameInput,
+        Editor, GlobalListener, Help, Question, ResultTable, Score, ScoreTable, Timer,
+        UsernameInput,
     },
     config::Config,
     repository,
@@ -193,6 +194,8 @@ impl<T: TerminalAdapter> App<T> {
                 vec![Sub::new(SubEventClause::Any, SubClause::Always)],
             ),
 
+            Id::Help => (Box::new(Help::default()), Vec::new()),
+
             Id::ScoreTable => {
                 let scores = repository::score::get_all(&self.config.database_file).unwrap();
 
@@ -230,6 +233,7 @@ impl<T: TerminalAdapter> App<T> {
         self.inner.umount_all();
 
         self.remount(Id::GlobalListener);
+        self.remount(Id::Help);
 
         match screen {
             Screen::Home => {
