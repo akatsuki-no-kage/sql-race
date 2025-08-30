@@ -7,7 +7,6 @@ use std::time::Duration;
 use ratatui::layout::{Constraint, Layout, Rect};
 use tuirealm::{
     Application, Component, EventListenerCfg, NoUserEvent, Sub, SubClause, SubEventClause, Update,
-    application::ApplicationResult,
     terminal::{CrosstermTerminalAdapter, TerminalAdapter, TerminalBridge},
 };
 
@@ -212,7 +211,7 @@ impl<T: TerminalAdapter> App<T> {
             }
         }
 
-        None
+        Some(Message::None)
     }
 
     fn active_next(&mut self) -> Option<Message> {
