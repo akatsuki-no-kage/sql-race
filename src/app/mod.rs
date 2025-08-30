@@ -175,9 +175,9 @@ where
 
                 None
             }
-
             Message::Play(username) => {
                 self.username = Some(username);
+                self.question_index = 0;
 
                 Some(Message::ChangeScreen(Screen::Game))
             }
