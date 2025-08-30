@@ -37,6 +37,7 @@ impl ScoreTable {
                 .title("Score", Alignment::Center)
                 .scroll(true)
                 .step(5)
+                .highlighted_color(Color::Cyan)
                 .row_height(1)
                 .headers(["Username", "Score", "Time"])
                 .table(scores),

@@ -38,6 +38,7 @@ impl ResultTable {
             .title("Result", Alignment::Center)
             .scroll(true)
             .step(5)
+            .highlighted_color(Color::Cyan)
             .row_height(1);
 
         let component = match data {
