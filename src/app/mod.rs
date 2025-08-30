@@ -11,9 +11,9 @@ use tuirealm::{
 };
 
 use crate::{
-    component::{Editor, GlobalListener, Score, ScoreTable, Timer, UsernameInput},
+    component::{Editor, GlobalListener, Question, Score, ScoreTable, Timer, UsernameInput},
     config::Config,
-    repository::{self, question::Question},
+    repository,
 };
 
 pub use id::*;
@@ -26,7 +26,7 @@ pub struct App<T: TerminalAdapter> {
     pub username: Option<String>,
 
     pub config: Config,
-    pub questions: Vec<Question>,
+    pub questions: Vec<repository::question::Question>,
     pub question_index: usize,
 
     pub screen: Screen,
@@ -113,11 +113,15 @@ impl<T: TerminalAdapter> App<T> {
                     Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(area);
                 let header_chunks =
                     Layout::horizontal([Constraint::Fill(1), Constraint::Fill(1)]).split(chunks[0]);
+                let content_chunks =
+                    Layout::horizontal([Constraint::Percentage(70), Constraint::Percentage(30)])
+                        .split(chunks[1]);
 
                 vec![
                     (Id::Timer, header_chunks[0]),
                     (Id::Score, header_chunks[1]),
-                    (Id::Editor, chunks[1]),
+                    (Id::Editor, content_chunks[0]),
+                    (Id::Question, content_chunks[1]),
                 ]
             }
         }
@@ -197,6 +201,11 @@ impl<T: TerminalAdapter> App<T> {
 
             Id::Score => (Box::new(Score::new(self.question_index as u64)), Vec::new()),
 
+            Id::Question => (
+                Box::new(Question::new(self.current_question().question.clone())),
+                Vec::new(),
+            ),
+
             Id::Editor => (Box::new(Editor::default()), Vec::new()),
         };
 
@@ -253,5 +262,9 @@ impl<T: TerminalAdapter> App<T> {
         self.quit = true;
 
         None
+    }
+
+    fn current_question(&self) -> &repository::question::Question {
+        &self.questions[self.question_index]
     }
 }
