@@ -62,36 +62,31 @@ impl Schema {
 
 pub type QuestionPack = (Vec<String>, Vec<String>, Vec<Schema>);
 
-#[derive(Default)]
-pub struct QuestionPackRepository;
+pub fn get(dir: &Path, sample_size: usize) -> io::Result<QuestionPack> {
+    let mut question_dirs = fs::read_dir(dir)?
+        .filter_map(|x| x.ok().map(|x| x.path()))
+        .choose_multiple(&mut rand::rng(), sample_size);
+    question_dirs.sort();
 
-impl QuestionPackRepository {
-    pub fn get(&self, dir: &Path, sample_size: usize) -> io::Result<QuestionPack> {
-        let mut question_dirs = fs::read_dir(dir)?
-            .filter_map(|x| x.ok().map(|x| x.path()))
-            .choose_multiple(&mut rand::rng(), sample_size);
-        question_dirs.sort();
+    let questions = question_dirs
+        .clone()
+        .par_iter()
+        .map(|dir| fs::read_to_string(dir.join("question.txt")))
+        .collect::<Result<_, io::Error>>()?;
 
-        let questions = question_dirs
-            .clone()
-            .par_iter()
-            .map(|dir| fs::read_to_string(dir.join("question.txt")))
-            .collect::<Result<_, io::Error>>()?;
+    let answers = question_dirs
+        .clone()
+        .par_iter()
+        .map(|dir| fs::read_to_string(dir.join("answer.sql")))
+        .collect::<Result<_, io::Error>>()?;
 
-        let answers = question_dirs
-            .clone()
-            .par_iter()
-            .map(|dir| fs::read_to_string(dir.join("answer.sql")))
-            .collect::<Result<_, io::Error>>()?;
+    let schemas = question_dirs
+        .par_iter()
+        .map(|dir| {
+            let raw_schema = fs::read_to_string(dir.join("schema.sql"))?;
+            Schema::new(raw_schema).map_err(io::Error::other)
+        })
+        .collect::<Result<_, io::Error>>()?;
 
-        let schemas = question_dirs
-            .par_iter()
-            .map(|dir| {
-                let raw_schema = fs::read_to_string(dir.join("schema.sql"))?;
-                Schema::new(raw_schema).map_err(io::Error::other)
-            })
-            .collect::<Result<_, io::Error>>()?;
-
-        Ok((questions, answers, schemas))
-    }
+    Ok((questions, answers, schemas))
 }
