@@ -7,6 +7,6 @@ pub enum Message {
     NextQuestion,
     End,
     ChangeScreen(Screen),
-    ActiveNext,
+    Active(isize),
     None,
 }

@@ -87,7 +87,7 @@ where
             Message::NextQuestion => self.next_question(),
             Message::End => self.end(),
             Message::ChangeScreen(screen) => self.change_screen(screen),
-            Message::ActiveNext => self.active_next(),
+            Message::Active(offset) => self.active(offset),
             Message::None => None,
         }
     }
@@ -252,24 +252,26 @@ impl<T: TerminalAdapter> App<T> {
         Some(Message::None)
     }
 
-    fn active_next(&mut self) -> Option<Message> {
-        let next = match self.inner.focus() {
-            Some(Id::UsernameInput) => Some(Id::ScoreTable),
-            Some(Id::ScoreTable) => Some(Id::UsernameInput),
-            None => Some(match self.screen {
-                Screen::Home => Id::UsernameInput,
-                Screen::Game => Id::Editor,
-            }),
-            _ => None,
+    fn active(&mut self, offset: isize) -> Option<Message> {
+        let active_list = match self.screen {
+            Screen::Home => [Id::ScoreTable, Id::UsernameInput].as_slice(),
+            Screen::Game => [Id::Editor, Id::ResultTable, Id::Question].as_slice(),
         };
+        let count = active_list.len() as isize;
 
-        if let Some(next) = next {
-            self.inner.active(&next).unwrap();
+        let active_index = self
+            .inner
+            .focus()
+            .and_then(|id| active_list.iter().position(|x| x == id))
+            .unwrap_or(0) as isize;
 
-            Some(Message::None)
-        } else {
-            None
-        }
+        let next_index = (active_index + count + offset) % count;
+
+        self.inner
+            .active(&active_list[next_index as usize])
+            .unwrap();
+
+        Some(Message::None)
     }
 
     fn quit(&mut self) -> Option<Message> {

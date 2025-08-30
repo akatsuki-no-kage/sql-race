@@ -166,10 +166,6 @@ impl Component<Message, NoUserEvent> for Editor<'_> {
                 self.perform(textarea::command::REDO);
                 Some(Message::None)
             }
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                self.perform(Cmd::Type('\t'));
-                Some(Message::None)
-            }
             Event::Keyboard(KeyEvent {
                 code: Key::Char(ch),
                 ..
