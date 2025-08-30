@@ -67,7 +67,7 @@ pub struct Question {
     pub schema: Schema,
 }
 
-pub fn get(path: &Path, sample_size: usize) -> io::Result<Vec<Question>> {
+pub fn get_many(path: &Path, sample_size: usize) -> io::Result<Vec<Question>> {
     let mut question_dirs = fs::read_dir(path)?
         .filter_map(|x| x.ok().map(|x| x.path()))
         .choose_multiple(&mut rand::rng(), sample_size);
