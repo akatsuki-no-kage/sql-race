@@ -27,27 +27,32 @@ pub struct ResultTable {
 }
 
 impl ResultTable {
-    pub fn new(headers: Vec<String>, rows: Vec<Row>) -> Self {
-        let rows = rows
-            .into_iter()
-            .map(|row| row.into_iter().map(into_text_span).collect())
-            .collect();
+    pub fn new(data: Option<(Vec<String>, Vec<Row>)>) -> Self {
+        let component = Table::default()
+            .borders(
+                Borders::default()
+                    .sides(BorderSides::all())
+                    .color(Color::Green),
+            )
+            .inactive(Style::reset())
+            .title("Result", Alignment::Center)
+            .scroll(true)
+            .step(5)
+            .row_height(1);
 
-        Self {
-            component: Table::default()
-                .borders(
-                    Borders::default()
-                        .sides(BorderSides::all())
-                        .color(Color::Green),
-                )
-                .inactive(Style::reset())
-                .title("Result", Alignment::Center)
-                .scroll(true)
-                .step(5)
-                .row_height(1)
-                .headers(headers)
-                .table(rows),
-        }
+        let component = match data {
+            Some((headers, rows)) => {
+                let rows = rows
+                    .into_iter()
+                    .map(|row| row.into_iter().map(into_text_span).collect())
+                    .collect();
+
+                component.headers(headers).table(rows)
+            }
+            None => component,
+        };
+
+        Self { component }
     }
 }
 
