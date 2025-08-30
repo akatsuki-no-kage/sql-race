@@ -58,7 +58,9 @@ impl Timer {
                         .direction(Direction::Horizontal)
                         .margin(1),
                 )
-                .children(vec![Box::new(Label::default())]),
+                .children(vec![Box::new(
+                    Label::default().alignment(Alignment::Center),
+                )]),
             states: OwnStates::new(duration, tick_rate),
         }
     }
