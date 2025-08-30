@@ -122,11 +122,15 @@ impl<T: TerminalAdapter> App<T> {
                 let content_chunks =
                     Layout::horizontal([Constraint::Percentage(70), Constraint::Percentage(30)])
                         .split(chunks[1]);
+                let editor_chunks =
+                    Layout::vertical([Constraint::Percentage(70), Constraint::Percentage(30)])
+                        .split(content_chunks[0]);
 
                 vec![
                     (Id::Timer, header_chunks[0]),
                     (Id::Score, header_chunks[1]),
-                    (Id::Editor, content_chunks[0]),
+                    (Id::Editor, editor_chunks[0]),
+                    (Id::ResultTable, editor_chunks[1]),
                     (Id::Question, content_chunks[1]),
                 ]
             }
