@@ -1,6 +1,7 @@
 pub mod editor;
 pub mod global_listener;
 pub mod help;
+pub mod query_error;
 pub mod question;
 pub mod result_table;
 pub mod score;
@@ -12,6 +13,7 @@ pub mod username_input;
 pub use editor::Editor;
 pub use global_listener::GlobalListener;
 pub use help::Help;
+pub use query_error::QueryError;
 pub use question::Question;
 pub use result_table::ResultTable;
 pub use score::Score;
