@@ -143,7 +143,7 @@ impl<T: TerminalAdapter> App<T> {
                     (Id::Timer, header_chunks[0]),
                     (Id::Score, header_chunks[1]),
                     (Id::Editor, editor_chunks[0]),
-                    (Id::ResultTable, editor_chunks[1]),
+                    (Id::Result, editor_chunks[1]),
                     (Id::Question, content_chunks[1]),
                 ]
             }
@@ -187,7 +187,7 @@ impl<T: TerminalAdapter> App<T> {
 
         self.remount(Id::Editor);
         self.remount(Id::Question);
-        self.remount(Id::ResultTable);
+        self.remount(Id::Result);
 
         Some(Message::None)
     }
@@ -242,7 +242,7 @@ impl<T: TerminalAdapter> App<T> {
                 Vec::new(),
             ),
 
-            Id::ResultTable => (Box::new(ResultTable::new(None)), Vec::new()),
+            Id::Result => (Box::new(ResultTable::new(None)), Vec::new()),
 
             Id::Editor => (Box::new(Editor::default()), Vec::new()),
         };
@@ -269,7 +269,7 @@ impl<T: TerminalAdapter> App<T> {
                 self.remount(Id::Timer);
                 self.remount(Id::Score);
                 self.remount(Id::Question);
-                self.remount(Id::ResultTable);
+                self.remount(Id::Result);
                 self.remount(Id::Editor);
 
                 self.inner.active(&Id::Editor).unwrap();
@@ -282,7 +282,7 @@ impl<T: TerminalAdapter> App<T> {
     fn active(&mut self, offset: isize) -> Option<Message> {
         let active_list = match self.screen {
             Screen::Home => [Id::ScoreTable, Id::UsernameInput].as_slice(),
-            Screen::Game => [Id::Editor, Id::ResultTable, Id::Question].as_slice(),
+            Screen::Game => [Id::Editor, Id::Result, Id::Question].as_slice(),
         };
         let count = active_list.len() as isize;
 
