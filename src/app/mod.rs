@@ -20,7 +20,7 @@ use crate::{
         username_input::UsernameInput,
     },
     config::Config,
-    repository,
+    repository::{self, question::Question},
 };
 
 pub use id::*;
@@ -36,6 +36,7 @@ where
     pub username: Option<String>,
 
     pub config: Config,
+    pub questions: Vec<Question>,
 
     pub screen: Screen,
     pub quit: bool,
@@ -54,10 +55,15 @@ impl Default for App<CrosstermTerminalAdapter> {
                 .tick_interval(Duration::from_secs(config.tick_rate)),
         );
 
+        let questions =
+            repository::question::get_many(&config.question_pack_dir, config.question_count)
+                .unwrap();
+
         let mut app = Self {
             inner,
             username: None,
             config,
+            questions,
             screen: Screen::Home,
             quit: false,
             redraw: true,
