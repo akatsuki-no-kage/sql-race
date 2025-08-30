@@ -8,7 +8,7 @@ use tui_realm_stdlib::{Container, Label};
 use tuirealm::{
     AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent, State, StateValue,
     command::{Cmd, CmdResult},
-    props::{BorderSides, Borders, Layout},
+    props::{Alignment, BorderSides, Borders, Layout},
 };
 
 use crate::app::Message;
@@ -51,6 +51,7 @@ impl Timer {
         Self {
             component: Container::default()
                 .borders(Borders::default().sides(BorderSides::all()))
+                .title("Time", Alignment::Center)
                 .layout(
                     Layout::default()
                         .constraints(&[Constraint::Min(0)])
