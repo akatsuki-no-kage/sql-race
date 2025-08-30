@@ -1,19 +1,19 @@
 pub mod editor;
 pub mod global_listener;
 pub mod question;
+pub mod result_table;
 pub mod score;
 pub mod score_table;
 pub mod textarea;
 pub mod timer;
 pub mod username_input;
-pub mod result_table;
 
 pub use editor::Editor;
 pub use global_listener::GlobalListener;
 pub use question::Question;
+pub use result_table::ResultTable;
 pub use score::Score;
 pub use score_table::ScoreTable;
 pub use textarea::TextArea;
 pub use timer::Timer;
 pub use username_input::UsernameInput;
-pub use result_table::ResultTable;
