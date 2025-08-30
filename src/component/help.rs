@@ -27,6 +27,7 @@ impl Default for Help {
                 .scroll(true)
                 .step(5)
                 .highlighted_color(Color::Cyan)
+                .rewind(true)
                 .row_height(1)
                 .headers(["Key", "Description"])
                 .table(
