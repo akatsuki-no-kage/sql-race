@@ -6,5 +6,6 @@ pub enum Id {
     Timer,
     Score,
     Editor,
+    ResultTable,
     Question,
 }
