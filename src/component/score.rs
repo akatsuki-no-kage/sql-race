@@ -2,7 +2,7 @@ use ratatui::layout::{Constraint, Direction};
 use tui_realm_stdlib::{Container, Label};
 use tuirealm::{
     Component, Event, MockComponent, NoUserEvent,
-    props::{BorderSides, Borders, Layout},
+    props::{Alignment, BorderSides, Borders, Layout},
 };
 
 use crate::app::Message;
@@ -17,6 +17,7 @@ impl Score {
         Self {
             component: Container::default()
                 .borders(Borders::default().sides(BorderSides::all()))
+                .title("Score", Alignment::Center)
                 .layout(
                     Layout::default()
                         .constraints(&[Constraint::Min(0)])
