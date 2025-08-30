@@ -1,8 +1,7 @@
-use ratatui::layout::{Constraint, Direction};
-use tui_realm_stdlib::{Container, Label, Paragraph};
+use tui_realm_stdlib::Paragraph;
 use tuirealm::{
     Component, Event, MockComponent, NoUserEvent,
-    props::{Alignment, BorderSides, Borders, Layout, TextSpan},
+    props::{Alignment, BorderSides, Borders, TextSpan},
 };
 
 use crate::app::Message;
