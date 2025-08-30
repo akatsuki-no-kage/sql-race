@@ -125,16 +125,20 @@ where
 
     fn active_next(&mut self) -> ApplicationResult<()> {
         let next = match self.inner.focus() {
-            Some(Id::UsernameInput) => Id::ScoreTable,
-            Some(Id::ScoreTable) => Id::UsernameInput,
-            Some(current) => current.clone(),
-            None => match self.screen {
+            Some(Id::UsernameInput) => Some(Id::ScoreTable),
+            Some(Id::ScoreTable) => Some(Id::UsernameInput),
+            None => Some(match self.screen {
                 Screen::Home => Id::UsernameInput,
-                Screen::Game => Id::Timer,
-            },
+                Screen::Game => Id::Editor,
+            }),
+            _ => None,
         };
 
-        self.active(&next)
+        if let Some(next) = next {
+            self.active(&next)
+        } else {
+            Ok(())
+        }
     }
 
     pub fn view(&mut self) {
