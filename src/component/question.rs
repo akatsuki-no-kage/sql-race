@@ -1,30 +1,25 @@
 use ratatui::layout::{Constraint, Direction};
-use tui_realm_stdlib::{Container, Label};
+use tui_realm_stdlib::{Container, Label, Paragraph};
 use tuirealm::{
     Component, Event, MockComponent, NoUserEvent,
-    props::{Alignment, BorderSides, Borders, Layout},
+    props::{Alignment, BorderSides, Borders, Layout, TextSpan},
 };
 
 use crate::app::Message;
 
 #[derive(MockComponent)]
 pub struct Question {
-    component: Container,
+    component: Paragraph,
 }
 
 impl Question {
     pub fn new(question: String) -> Self {
         Self {
-            component: Container::default()
+            component: Paragraph::default()
                 .borders(Borders::default().sides(BorderSides::all()))
                 .title("Question", Alignment::Center)
-                .layout(
-                    Layout::default()
-                        .constraints(&[Constraint::Min(0)])
-                        .direction(Direction::Horizontal)
-                        .margin(1),
-                )
-                .children(vec![Box::new(Label::default().text(question))]),
+                .text(question.lines().map(TextSpan::new))
+                .wrap(false),
         }
     }
 }
