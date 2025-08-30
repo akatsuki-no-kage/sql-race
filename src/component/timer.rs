@@ -1,14 +1,11 @@
 use std::time::Duration;
 
-use ratatui::{
-    Frame,
-    layout::{Constraint, Direction, Rect},
-};
-use tui_realm_stdlib::{Container, Label};
+use ratatui::{Frame, layout::Rect};
+use tui_realm_stdlib::Paragraph;
 use tuirealm::{
     AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent, State, StateValue,
     command::{Cmd, CmdResult},
-    props::{Alignment, BorderSides, Borders, Layout},
+    props::{Alignment, BorderSides, Borders, PropPayload, PropValue, TextSpan},
 };
 
 use crate::app::Message;
@@ -42,25 +39,17 @@ impl OwnStates {
 }
 
 pub struct Timer {
-    component: Container,
+    component: Paragraph,
     pub states: OwnStates,
 }
 
 impl Timer {
     pub fn new(duration: Duration, tick_rate: Duration) -> Self {
         Self {
-            component: Container::default()
+            component: Paragraph::default()
                 .borders(Borders::default().sides(BorderSides::all()))
                 .title("Time", Alignment::Center)
-                .layout(
-                    Layout::default()
-                        .constraints(&[Constraint::Min(0)])
-                        .direction(Direction::Horizontal)
-                        .margin(1),
-                )
-                .children(vec![Box::new(
-                    Label::default().alignment(Alignment::Center),
-                )]),
+                .alignment(Alignment::Center),
             states: OwnStates::new(duration, tick_rate),
         }
     }
@@ -96,7 +85,12 @@ impl Component<Message, NoUserEvent> for Timer {
 
                 let second_left = self.states.get_second_left();
 
-                self.attr(Attribute::Text, AttrValue::String(second_left.to_string()));
+                self.attr(
+                    Attribute::Text,
+                    AttrValue::Payload(PropPayload::Vec(vec![PropValue::TextSpan(TextSpan::new(
+                        second_left.to_string(),
+                    ))])),
+                );
 
                 if second_left > 0 {
                     return Some(Message::None);

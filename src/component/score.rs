@@ -1,34 +1,24 @@
-use ratatui::layout::{Constraint, Direction};
-use tui_realm_stdlib::{Container, Label};
+use tui_realm_stdlib::Paragraph;
 use tuirealm::{
     Component, Event, MockComponent, NoUserEvent,
-    props::{Alignment, BorderSides, Borders, Layout},
+    props::{Alignment, BorderSides, Borders, TextSpan},
 };
 
 use crate::app::Message;
 
 #[derive(MockComponent)]
 pub struct Score {
-    component: Container,
+    component: Paragraph,
 }
 
 impl Score {
     pub fn new(score: u64) -> Self {
         Self {
-            component: Container::default()
+            component: Paragraph::default()
                 .borders(Borders::default().sides(BorderSides::all()))
                 .title("Score", Alignment::Center)
-                .layout(
-                    Layout::default()
-                        .constraints(&[Constraint::Min(0)])
-                        .direction(Direction::Horizontal)
-                        .margin(1),
-                )
-                .children(vec![Box::new(
-                    Label::default()
-                        .text(score.to_string())
-                        .alignment(Alignment::Center),
-                )]),
+                .text([TextSpan::new(score.to_string())])
+                .alignment(Alignment::Center),
         }
     }
 }
