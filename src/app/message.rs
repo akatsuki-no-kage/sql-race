@@ -4,6 +4,7 @@ use crate::app::Screen;
 pub enum Message {
     Close,
     Start(String),
+    End,
     ChangeScreen(Screen),
     ActiveNext,
     None,

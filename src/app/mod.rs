@@ -181,12 +181,13 @@ where
 
                 Some(Message::ChangeScreen(Screen::Game))
             }
+            Message::End => {
+                self.username = None;
+
+                Some(Message::ChangeScreen(Screen::Home))
+            }
             Message::ChangeScreen(screen) => {
                 self.screen = screen;
-                if matches!(screen, Screen::Home) {
-                    self.username = None;
-                }
-
                 self.mount_all();
 
                 None

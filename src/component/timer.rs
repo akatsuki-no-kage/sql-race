@@ -102,7 +102,7 @@ impl Component<Message, NoUserEvent> for Timer {
                 if self.states.is_disable {
                     None
                 } else {
-                    Some(Message::ChangeScreen(Screen::Home))
+                    Some(Message::End)
                 }
             }
             _ => None,
