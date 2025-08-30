@@ -2,13 +2,12 @@ pub mod attribute;
 pub mod command;
 
 use arboard::Clipboard;
-use ratatui::layout::Constraint;
 use tui_textarea::{CursorMove, TextArea as TextAreaWidget};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{
     Alignment, AttrValue, Attribute, Borders, PropPayload, PropValue, Props, Style, TextModifiers,
 };
-use tuirealm::ratatui::layout::{Direction as LayoutDirection, Layout, Rect};
+use tuirealm::ratatui::layout::Rect;
 use tuirealm::ratatui::widgets::Block;
 use tuirealm::{Frame, MockComponent, State, StateValue};
 
@@ -109,11 +108,6 @@ impl<'a> TextArea<'a> {
         self
     }
 
-    pub fn layout_margin(mut self, margin: u16) -> Self {
-        self.attr(attribute::LAYOUT_MARGIN, AttrValue::Size(margin));
-        self
-    }
-
     fn get_block(&self) -> Option<Block<'a>> {
         let mut block = Block::default();
         if let Some(AttrValue::Title((title, alignment))) = self.query(Attribute::Title) {
@@ -163,15 +157,9 @@ impl MockComponent for TextArea<'_> {
             return;
         }
 
-        let margin = match self.get_block() {
-            Some(block) => {
-                self.widget.set_block(block);
-                self.props
-                    .get_or(attribute::LAYOUT_MARGIN, AttrValue::Size(1))
-                    .unwrap_size()
-            }
-            None => 0,
-        };
+        if let Some(block) = self.get_block() {
+            self.widget.set_block(block);
+        }
 
         let focus = self
             .props
@@ -189,13 +177,7 @@ impl MockComponent for TextArea<'_> {
         };
         self.widget.set_cursor_style(cursor_style);
 
-        let chunks = Layout::default()
-            .direction(LayoutDirection::Vertical)
-            .constraints([Constraint::Min(0)])
-            .margin(margin)
-            .split(area);
-
-        frame.render_widget(&self.widget, chunks[0]);
+        frame.render_widget(&self.widget, area);
     }
 
     fn query(&self, attr: Attribute) -> Option<AttrValue> {

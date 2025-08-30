@@ -18,8 +18,16 @@ impl Component<Message, NoUserEvent> for GlobalListener {
             Event::Keyboard(KeyEvent {
                 code: Key::Char('q'),
                 modifiers: KeyModifiers::CONTROL,
-            }) => Some(Message::Close),
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => Some(Message::ActiveNext),
+            }) => Some(Message::End),
+
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('c'),
+                modifiers: KeyModifiers::CONTROL,
+            }) => Some(Message::Quit),
+
+            Event::Keyboard(KeyEvent {
+                code: Key::BackTab, ..
+            }) => Some(Message::ActiveNext),
             _ => None,
         }
     }
