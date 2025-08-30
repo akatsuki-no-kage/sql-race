@@ -12,7 +12,8 @@ use tuirealm::{
 
 use crate::{
     component::{
-        Editor, GlobalListener, Question, ResultTable, Score, ScoreTable, Timer, UsernameInput,
+        Editor, GlobalListener, Help, Question, ResultTable, Score, ScoreTable, Timer,
+        UsernameInput,
     },
     config::Config,
     repository,
@@ -83,6 +84,7 @@ where
 
         match message {
             Message::Quit => self.quit(),
+            Message::ToggleHelp => self.toggle_help(),
             Message::Start(username) => self.start(username),
             Message::NextQuestion => self.next_question(),
             Message::End => self.end(),
@@ -94,7 +96,18 @@ where
 }
 
 impl<T: TerminalAdapter> App<T> {
-    fn get_components(screen: Screen, area: Rect) -> Vec<(Id, Rect)> {
+    fn get_components(focus: Option<&Id>, screen: Screen, area: Rect) -> Vec<(Id, Rect)> {
+        if focus == Some(&Id::Help) {
+            let chunks =
+                Layout::horizontal([Constraint::Min(0), Constraint::Max(80), Constraint::Min(0)])
+                    .split(area);
+            let chunks =
+                Layout::vertical([Constraint::Min(0), Constraint::Max(80), Constraint::Min(0)])
+                    .split(chunks[1]);
+
+            return vec![(Id::Help, chunks[1])];
+        }
+
         match screen {
             Screen::Home => {
                 let margined_chunks = Layout::horizontal([
@@ -140,13 +153,22 @@ impl<T: TerminalAdapter> App<T> {
     pub fn view(&mut self) {
         self.terminal
             .draw(|f| {
-                let components = Self::get_components(self.screen, f.area());
+                let components = Self::get_components(self.inner.focus(), self.screen, f.area());
 
                 for (id, chunk) in components {
                     self.inner.view(&id, f, chunk);
                 }
             })
             .unwrap();
+    }
+
+    fn toggle_help(&mut self) -> Option<Message> {
+        match self.inner.focus() {
+            Some(id) if id == &Id::Help => self.inner.blur().unwrap(),
+            _ => self.inner.active(&Id::Help).unwrap(),
+        }
+
+        Some(Message::None)
     }
 
     fn start(&mut self, username: String) -> Option<Message> {
@@ -193,6 +215,8 @@ impl<T: TerminalAdapter> App<T> {
                 vec![Sub::new(SubEventClause::Any, SubClause::Always)],
             ),
 
+            Id::Help => (Box::new(Help::default()), Vec::new()),
+
             Id::ScoreTable => {
                 let scores = repository::score::get_all(&self.config.database_file).unwrap();
 
@@ -230,6 +254,7 @@ impl<T: TerminalAdapter> App<T> {
         self.inner.umount_all();
 
         self.remount(Id::GlobalListener);
+        self.remount(Id::Help);
 
         match screen {
             Screen::Home => {
