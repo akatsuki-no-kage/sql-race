@@ -229,6 +229,7 @@ impl<T: TerminalAdapter> App<T> {
             Screen::Game => {
                 self.remount(Id::Timer);
                 self.remount(Id::Score);
+                self.remount(Id::Question);
                 self.remount(Id::Editor);
 
                 self.inner.active(&Id::Editor).unwrap();
