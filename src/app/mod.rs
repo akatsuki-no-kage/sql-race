@@ -37,6 +37,7 @@ where
 
     pub config: Config,
     pub questions: Vec<Question>,
+    pub question_index: usize,
 
     pub screen: Screen,
     pub quit: bool,
@@ -61,9 +62,13 @@ impl Default for App<CrosstermTerminalAdapter> {
 
         let mut app = Self {
             inner,
+
             username: None,
+
             config,
             questions,
+            question_index: 0,
+
             screen: Screen::Home,
             quit: false,
             redraw: true,
