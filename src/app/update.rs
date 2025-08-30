@@ -16,28 +16,43 @@ where
 
                 None
             }
+
             Message::Start(username) => {
                 self.username = Some(username);
                 self.question_index = 0;
 
                 Some(Message::ChangeScreen(Screen::Game))
             }
+
+            Message::NextQuestion => {
+                self.question_index += 1;
+
+                if self.question_index == self.questions.len() {
+                    Some(Message::End)
+                } else {
+                    None
+                }
+            }
+
             Message::End => {
                 self.username = None;
 
                 Some(Message::ChangeScreen(Screen::Home))
             }
+
             Message::ChangeScreen(screen) => {
                 self.screen = screen;
                 self.mount_all();
 
                 None
             }
+
             Message::ActiveNext => {
                 self.active_next().unwrap();
 
                 None
             }
+
             Message::None => None,
         }
     }
