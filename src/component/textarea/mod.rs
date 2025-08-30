@@ -2,13 +2,12 @@ pub mod attribute;
 pub mod command;
 
 use arboard::Clipboard;
-use ratatui::layout::Constraint;
 use tui_textarea::{CursorMove, TextArea as TextAreaWidget};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{
     Alignment, AttrValue, Attribute, Borders, PropPayload, PropValue, Props, Style, TextModifiers,
 };
-use tuirealm::ratatui::layout::{Direction as LayoutDirection, Layout, Rect};
+use tuirealm::ratatui::layout::Rect;
 use tuirealm::ratatui::widgets::Block;
 use tuirealm::{Frame, MockComponent, State, StateValue};
 
@@ -106,11 +105,6 @@ impl<'a> TextArea<'a> {
 
     pub fn single_line(mut self, single_line: bool) -> Self {
         self.attr(attribute::SINGLE_LINE, AttrValue::Flag(single_line));
-        self
-    }
-
-    pub fn layout_margin(mut self, margin: u16) -> Self {
-        self.attr(attribute::LAYOUT_MARGIN, AttrValue::Size(margin));
         self
     }
 

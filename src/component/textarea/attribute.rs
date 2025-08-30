@@ -7,4 +7,3 @@ pub const MAX_HISTORY: Attribute = Attribute::Custom("max-history");
 pub const TAB_LENGTH: Attribute = Attribute::Custom("tab-size");
 pub const HARD_TAB: Attribute = Attribute::Custom("hard-tab");
 pub const SINGLE_LINE: Attribute = Attribute::Custom("single-line");
-pub const LAYOUT_MARGIN: Attribute = Attribute::Custom("layout-margin");
