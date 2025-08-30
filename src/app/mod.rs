@@ -252,10 +252,35 @@ impl<T: TerminalAdapter> App<T> {
         Some(Message::None)
     }
 
+    fn active(&mut self, offset: isize) -> Option<Message> {
+        let active_list = match self.screen {
+            Screen::Home => [Id::ScoreTable, Id::UsernameInput].as_slice(),
+            Screen::Game => [Id::Editor, Id::ResultTable, Id::Question].as_slice(),
+        };
+        let count = active_list.len() as isize;
+
+        let active_index = self
+            .inner
+            .focus()
+            .and_then(|id| active_list.iter().position(|x| x == id))
+            .unwrap_or(0) as isize;
+
+        let next_index = (active_index + count + offset) % count;
+
+        self.inner
+            .active(&active_list[next_index as usize])
+            .unwrap();
+
+        Some(Message::None)
+    }
+
     fn active_next(&mut self) -> Option<Message> {
         let next = match self.inner.focus() {
             Some(Id::UsernameInput) => Some(Id::ScoreTable),
             Some(Id::ScoreTable) => Some(Id::UsernameInput),
+            Some(Id::Editor) => Some(Id::ResultTable),
+            Some(Id::ResultTable) => Some(Id::Question),
+            Some(Id::Question) => Some(Id::Editor),
             None => Some(match self.screen {
                 Screen::Home => Id::UsernameInput,
                 Screen::Game => Id::Editor,
