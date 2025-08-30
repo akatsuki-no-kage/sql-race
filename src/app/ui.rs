@@ -20,7 +20,10 @@ fn draw_home(app: &mut Application<Id, Message, NoUserEvent>, f: &mut Frame) {
 }
 
 fn draw_game(app: &mut Application<Id, Message, NoUserEvent>, f: &mut Frame) {
-    app.view(&Id::Timer, f, f.area());
+    let chunks = Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(f.area());
+
+    app.view(&Id::Timer, f, chunks[0]);
+    app.view(&Id::Editor, f, chunks[1]);
 }
 
 pub fn draw(app: &mut Application<Id, Message, NoUserEvent>, screen: Screen, f: &mut Frame) {

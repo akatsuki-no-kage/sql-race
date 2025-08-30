@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use serde::Deserialize;
 
 const fn default_game_duration() -> u64 {
-    5
+    180
 }
 
 const fn default_tick_rate() -> u64 {
