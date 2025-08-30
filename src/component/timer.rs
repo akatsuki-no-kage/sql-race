@@ -11,7 +11,7 @@ use tuirealm::{
     props::{BorderSides, Borders, Layout},
 };
 
-use crate::app::{Message, Screen};
+use crate::app::Message;
 
 pub struct OwnStates {
     time_left: Duration,
