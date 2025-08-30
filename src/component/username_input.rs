@@ -70,7 +70,7 @@ impl Component<Message, NoUserEvent> for UsernameInput {
         };
 
         match cmd_result {
-            CmdResult::Submit(State::One(StateValue::String(name))) => Some(Message::Play(name)),
+            CmdResult::Submit(State::One(StateValue::String(name))) => Some(Message::Start(name)),
             _ => Some(Message::None),
         }
     }

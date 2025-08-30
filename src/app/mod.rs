@@ -175,7 +175,7 @@ where
 
                 None
             }
-            Message::Play(username) => {
+            Message::Start(username) => {
                 self.username = Some(username);
                 self.question_index = 0;
 
