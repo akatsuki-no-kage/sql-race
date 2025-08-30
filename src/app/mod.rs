@@ -186,6 +186,8 @@ impl<T: TerminalAdapter> App<T> {
         }
 
         self.remount(Id::Editor);
+        self.remount(Id::Question);
+        self.remount(Id::ResultTable);
 
         Some(Message::None)
     }
