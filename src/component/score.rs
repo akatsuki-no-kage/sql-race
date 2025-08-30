@@ -12,8 +12,8 @@ pub struct Score {
     component: Container,
 }
 
-impl Default for Score {
-    fn default() -> Self {
+impl Score {
+    fn new(score: u64) -> Self {
         Self {
             component: Container::default()
                 .borders(Borders::default().sides(BorderSides::all()))
@@ -23,7 +23,7 @@ impl Default for Score {
                         .direction(Direction::Horizontal)
                         .margin(1),
                 )
-                .children(vec![Box::new(Label::default().text("0"))]),
+                .children(vec![Box::new(Label::default().text(score.to_string()))]),
         }
     }
 }
