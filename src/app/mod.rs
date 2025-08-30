@@ -147,8 +147,12 @@ impl<T: TerminalAdapter> App<T> {
     }
 
     fn end(&mut self) -> Option<Message> {
+        let Some(username) = self.username.as_ref() else {
+            return Some(Message::Quit);
+        };
+
         repository::score::insert(
-            self.username.as_ref().unwrap(),
+            username,
             self.question_index as u64,
             &self.config.database_file,
         )
