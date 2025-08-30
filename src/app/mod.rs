@@ -111,8 +111,12 @@ impl<T: TerminalAdapter> App<T> {
             Screen::Game => {
                 let chunks =
                     Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(area);
-                let header_chunks =
-                    Layout::horizontal([Constraint::Fill(1), Constraint::Fill(1)]).split(chunks[0]);
+                let header_chunks = Layout::horizontal([
+                    Constraint::Percentage(5),
+                    Constraint::Percentage(10),
+                    Constraint::Percentage(85),
+                ])
+                .split(chunks[0]);
                 let content_chunks =
                     Layout::horizontal([Constraint::Percentage(70), Constraint::Percentage(30)])
                         .split(chunks[1]);
