@@ -41,7 +41,7 @@ impl ResultTable {
                         .color(Color::Green),
                 )
                 .inactive(Style::reset())
-                .title("Score", Alignment::Center)
+                .title("Result", Alignment::Center)
                 .scroll(true)
                 .step(5)
                 .row_height(1)
