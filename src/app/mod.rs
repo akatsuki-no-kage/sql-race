@@ -87,7 +87,7 @@ where
             Message::NextQuestion => self.next_question(),
             Message::End => self.end(),
             Message::ChangeScreen(screen) => self.change_screen(screen),
-            Message::ActiveNext => self.active_next(),
+            Message::Active(offset) => self.active(offset),
             Message::None => None,
         }
     }
@@ -272,29 +272,6 @@ impl<T: TerminalAdapter> App<T> {
             .unwrap();
 
         Some(Message::None)
-    }
-
-    fn active_next(&mut self) -> Option<Message> {
-        let next = match self.inner.focus() {
-            Some(Id::UsernameInput) => Some(Id::ScoreTable),
-            Some(Id::ScoreTable) => Some(Id::UsernameInput),
-            Some(Id::Editor) => Some(Id::ResultTable),
-            Some(Id::ResultTable) => Some(Id::Question),
-            Some(Id::Question) => Some(Id::Editor),
-            None => Some(match self.screen {
-                Screen::Home => Id::UsernameInput,
-                Screen::Game => Id::Editor,
-            }),
-            _ => None,
-        };
-
-        if let Some(next) = next {
-            self.inner.active(&next).unwrap();
-
-            Some(Message::None)
-        } else {
-            None
-        }
     }
 
     fn quit(&mut self) -> Option<Message> {
