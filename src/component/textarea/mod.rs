@@ -163,15 +163,9 @@ impl MockComponent for TextArea<'_> {
             return;
         }
 
-        let margin = match self.get_block() {
-            Some(block) => {
-                self.widget.set_block(block);
-                self.props
-                    .get_or(attribute::LAYOUT_MARGIN, AttrValue::Size(1))
-                    .unwrap_size()
-            }
-            None => 0,
-        };
+        if let Some(block) = self.get_block() {
+            self.widget.set_block(block);
+        }
 
         let focus = self
             .props
@@ -189,13 +183,7 @@ impl MockComponent for TextArea<'_> {
         };
         self.widget.set_cursor_style(cursor_style);
 
-        let chunks = Layout::default()
-            .direction(LayoutDirection::Vertical)
-            .constraints([Constraint::Min(0)])
-            .margin(margin)
-            .split(area);
-
-        frame.render_widget(&self.widget, chunks[0]);
+        frame.render_widget(&self.widget, area);
     }
 
     fn query(&self, attr: Attribute) -> Option<AttrValue> {
