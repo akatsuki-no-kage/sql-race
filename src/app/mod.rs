@@ -16,7 +16,7 @@ use tuirealm::{
 
 use crate::{
     component::{
-        global_listener::GlobalListener, score_table::ScoreTable, timer::Timer,
+        editor::Editor, global_listener::GlobalListener, score_table::ScoreTable, timer::Timer,
         username_input::UsernameInput,
     },
     config::Config,
@@ -115,7 +115,10 @@ where
                 )
                 .unwrap();
 
-                self.active(&Id::Timer).unwrap();
+                self.mount(Id::Editor, Box::new(Editor::default()), Vec::new())
+                    .unwrap();
+
+                self.active(&Id::Editor).unwrap();
             }
         }
     }
