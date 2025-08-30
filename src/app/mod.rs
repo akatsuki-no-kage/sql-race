@@ -114,9 +114,9 @@ impl<T: TerminalAdapter> App<T> {
                 let chunks =
                     Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(area);
                 let header_chunks = Layout::horizontal([
-                    Constraint::Percentage(5),
-                    Constraint::Percentage(10),
-                    Constraint::Percentage(85),
+                    Constraint::Fill(1),
+                    Constraint::Fill(1),
+                    Constraint::Percentage(80),
                 ])
                 .split(chunks[0]);
                 let content_chunks =
