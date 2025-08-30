@@ -35,7 +35,7 @@ impl Default for Editor<'_> {
                 .max_histories(64)
                 .scroll_step(4)
                 .tab_length(4)
-                .title("Editor", Alignment::Left),
+                .title("Editor", Alignment::Center),
         }
     }
 }
