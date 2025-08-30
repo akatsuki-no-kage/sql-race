@@ -24,7 +24,11 @@ impl Score {
                         .direction(Direction::Horizontal)
                         .margin(1),
                 )
-                .children(vec![Box::new(Label::default().text(score.to_string()))]),
+                .children(vec![Box::new(
+                    Label::default()
+                        .text(score.to_string())
+                        .alignment(Alignment::Center),
+                )]),
         }
     }
 }
