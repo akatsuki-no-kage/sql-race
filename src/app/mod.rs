@@ -227,9 +227,11 @@ impl<T: TerminalAdapter> App<T> {
 
         if let Some(next) = next {
             self.inner.active(&next).unwrap();
-        }
 
-        None
+            Some(Message::None)
+        } else {
+            None
+        }
     }
 
     fn quit(&mut self) -> Option<Message> {
