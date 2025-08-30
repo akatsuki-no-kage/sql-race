@@ -1,2 +1,2 @@
-pub mod question_pack;
+pub mod question;
 pub mod score;
