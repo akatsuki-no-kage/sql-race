@@ -19,33 +19,22 @@ impl<'a> TryFrom<&rusqlite::Row<'a>> for Score {
         })
     }
 }
+pub fn insert(username: &str, score: u64, database_file: &str) -> rusqlite::Result<()> {
+    let connection = rusqlite::Connection::open(database_file)?;
 
-pub struct ScoreRepository {
-    connection: Connection,
+    connection.execute(
+        "INSERT INTO scores (username, score) VALUES (?, ?)",
+        (username, score),
+    )?;
+
+    Ok(())
 }
 
-impl ScoreRepository {
-    pub fn new(database_file: &str) -> rusqlite::Result<Self> {
-        let connection = rusqlite::Connection::open(database_file)?;
+pub fn get_all(database_file: &str) -> rusqlite::Result<Vec<Score>> {
+    let connection = rusqlite::Connection::open(database_file)?;
 
-        Ok(Self { connection })
-    }
+    let mut stmt = connection.prepare("SELECT * FROM scores ORDER BY score DESC")?;
 
-    pub fn insert(&self, username: &str, score: u64) -> rusqlite::Result<()> {
-        self.connection.execute(
-            "INSERT INTO scores (username, score) VALUES (?, ?)",
-            (username, score),
-        )?;
-
-        Ok(())
-    }
-
-    pub fn get_all(&self) -> rusqlite::Result<Vec<Score>> {
-        let mut stmt = self
-            .connection
-            .prepare("SELECT * FROM scores ORDER BY score DESC")?;
-
-        stmt.query_and_then((), |row| Score::try_from(row))?
-            .collect()
-    }
+    stmt.query_and_then((), |row| Score::try_from(row))?
+        .collect()
 }
