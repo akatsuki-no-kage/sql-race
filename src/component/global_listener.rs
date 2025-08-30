@@ -31,6 +31,16 @@ impl Component<Message, NoUserEvent> for GlobalListener {
                 code: Key::BackTab, ..
             }) => Some(Message::Active(-1)),
 
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('h'),
+                modifiers: KeyModifiers::CONTROL,
+            }) => Some(Message::ToggleHelp),
+
+            Event::Keyboard(KeyEvent {
+                code: Key::Function(1),
+                ..
+            }) => Some(Message::ToggleHelp),
+
             _ => None,
         }
     }
