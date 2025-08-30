@@ -1,6 +1,8 @@
 use tui_realm_stdlib::Textarea;
 use tuirealm::{
     Component, Event, MockComponent, NoUserEvent,
+    command::{Cmd, CmdResult, Direction, Position},
+    event::{Key, KeyEvent},
     props::{Alignment, BorderSides, Borders, Color, Style, TextSpan},
 };
 
@@ -28,7 +30,22 @@ impl Question {
 }
 
 impl Component<Message, NoUserEvent> for Question {
-    fn on(&mut self, _: Event<NoUserEvent>) -> Option<Message> {
+    fn on(&mut self, event: Event<NoUserEvent>) -> Option<Message> {
+        let _ = match event {
+            Event::Keyboard(KeyEvent {
+                code: Key::Down, ..
+            }) => self.perform(Cmd::Scroll(Direction::Down)),
+            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
+                self.perform(Cmd::Scroll(Direction::Up))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Home, ..
+            }) => self.perform(Cmd::GoTo(Position::Begin)),
+            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
+                self.perform(Cmd::GoTo(Position::End))
+            }
+            _ => CmdResult::None,
+        };
         Some(Message::None)
     }
 }
