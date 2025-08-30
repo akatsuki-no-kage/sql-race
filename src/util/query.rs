@@ -1,10 +1,9 @@
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use rusqlite::{Connection, types::Value};
 
-pub type Header = Vec<String>;
 pub type Row = Vec<Value>;
 
-pub fn run(query: &str, schema: &str) -> rusqlite::Result<(Header, Vec<Row>)> {
+pub fn run(query: &str, schema: &str) -> rusqlite::Result<(Vec<String>, Vec<Row>)> {
     let conn = Connection::open_in_memory()?;
 
     conn.execute(schema, ())?;
