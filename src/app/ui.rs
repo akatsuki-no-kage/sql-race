@@ -2,9 +2,22 @@ use ratatui::{
     Frame,
     layout::{Constraint, Layout},
 };
-use tuirealm::{Application, NoUserEvent};
+use tuirealm::{Application, NoUserEvent, terminal::TerminalAdapter};
 
-use crate::app::{Id, Message, Screen};
+use super::{App, Id, Message, Screen};
+
+impl<T> App<T>
+where
+    T: TerminalAdapter,
+{
+    pub fn view(&mut self) {
+        self.terminal
+            .draw(|f| {
+                draw(&mut self.inner, self.screen, f);
+            })
+            .unwrap();
+    }
+}
 
 fn draw_home(app: &mut Application<Id, Message, NoUserEvent>, f: &mut Frame) {
     let margined_chunks =
