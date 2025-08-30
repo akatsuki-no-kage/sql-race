@@ -13,7 +13,7 @@ pub struct Score {
 }
 
 impl Score {
-    fn new(score: u64) -> Self {
+    pub fn new(score: u64) -> Self {
         Self {
             component: Container::default()
                 .borders(Borders::default().sides(BorderSides::all()))

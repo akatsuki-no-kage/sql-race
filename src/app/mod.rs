@@ -11,7 +11,7 @@ use tuirealm::{
 };
 
 use crate::{
-    component::{Editor, GlobalListener, ScoreTable, Timer, UsernameInput},
+    component::{Editor, GlobalListener, Score, ScoreTable, Timer, UsernameInput},
     config::Config,
     repository::{self, question::Question},
 };
@@ -189,6 +189,8 @@ impl<T: TerminalAdapter> App<T> {
                 vec![Sub::new(SubEventClause::Tick, SubClause::Always)],
             ),
 
+            Id::Score => (Box::new(Score::new(self.question_index as u64)), Vec::new()),
+
             Id::Editor => (Box::new(Editor::default()), Vec::new()),
         };
 
@@ -211,6 +213,7 @@ impl<T: TerminalAdapter> App<T> {
             }
             Screen::Game => {
                 self.remount(Id::Timer);
+                self.remount(Id::Score);
                 self.remount(Id::Editor);
 
                 self.inner.active(&Id::Editor).unwrap();
