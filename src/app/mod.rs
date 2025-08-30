@@ -81,48 +81,12 @@ where
         self.redraw = true;
 
         match message {
-            Message::Close => {
-                self.quit = true;
-
-                None
-            }
-
-            Message::Start(username) => {
-                self.username = Some(username);
-                self.question_index = 0;
-
-                Some(Message::ChangeScreen(Screen::Game))
-            }
-
-            Message::NextQuestion => {
-                self.question_index += 1;
-
-                if self.question_index == self.questions.len() {
-                    Some(Message::End)
-                } else {
-                    None
-                }
-            }
-
-            Message::End => {
-                self.username = None;
-                self.question_index = 0;
-
-                Some(Message::ChangeScreen(Screen::Home))
-            }
-
-            Message::ChangeScreen(screen) => {
-                self.change_screen(screen);
-
-                None
-            }
-
-            Message::ActiveNext => {
-                self.active_next().unwrap();
-
-                None
-            }
-
+            Message::Quit => self.quit(),
+            Message::Start(username) => self.start(username),
+            Message::NextQuestion => self.next_question(),
+            Message::End => self.end(),
+            Message::ChangeScreen(screen) => self.change_screen(screen),
+            Message::ActiveNext => self.active_next(),
             Message::None => None,
         }
     }
@@ -166,6 +130,37 @@ impl<T: TerminalAdapter> App<T> {
             .unwrap();
     }
 
+    fn start(&mut self, username: String) -> Option<Message> {
+        self.username = Some(username);
+        self.question_index = 0;
+
+        Some(Message::ChangeScreen(Screen::Game))
+    }
+
+    fn next_question(&mut self) -> Option<Message> {
+        self.question_index += 1;
+
+        if self.question_index == self.questions.len() {
+            Some(Message::End)
+        } else {
+            None
+        }
+    }
+
+    fn end(&mut self) -> Option<Message> {
+        repository::score::insert(
+            self.username.as_ref().unwrap(),
+            self.question_index as u64,
+            &self.config.database_file,
+        )
+        .unwrap();
+
+        self.username = None;
+        self.question_index = 0;
+
+        Some(Message::ChangeScreen(Screen::Home))
+    }
+
     fn remount(&mut self, id: Id) {
         let (component, subs): (Box<dyn Component<_, _>>, _) = match id {
             Id::GlobalListener => (
@@ -195,7 +190,7 @@ impl<T: TerminalAdapter> App<T> {
         self.inner.remount(id, component, subs).unwrap();
     }
 
-    fn change_screen(&mut self, screen: Screen) {
+    fn change_screen(&mut self, screen: Screen) -> Option<Message> {
         self.screen = screen;
 
         self.inner.umount_all();
@@ -216,9 +211,11 @@ impl<T: TerminalAdapter> App<T> {
                 self.inner.active(&Id::Editor).unwrap();
             }
         }
+
+        None
     }
 
-    fn active_next(&mut self) -> ApplicationResult<()> {
+    fn active_next(&mut self) -> Option<Message> {
         let next = match self.inner.focus() {
             Some(Id::UsernameInput) => Some(Id::ScoreTable),
             Some(Id::ScoreTable) => Some(Id::UsernameInput),
@@ -230,9 +227,15 @@ impl<T: TerminalAdapter> App<T> {
         };
 
         if let Some(next) = next {
-            self.inner.active(&next)
-        } else {
-            Ok(())
+            self.inner.active(&next).unwrap();
         }
+
+        None
+    }
+
+    fn quit(&mut self) -> Option<Message> {
+        self.quit = true;
+
+        None
     }
 }

@@ -2,7 +2,7 @@ use crate::app::Screen;
 
 #[derive(Debug, PartialEq)]
 pub enum Message {
-    Close,
+    Quit,
     Start(String),
     NextQuestion,
     End,

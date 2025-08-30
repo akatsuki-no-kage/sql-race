@@ -23,7 +23,7 @@ impl Component<Message, NoUserEvent> for GlobalListener {
             Event::Keyboard(KeyEvent {
                 code: Key::Char('c'),
                 modifiers: KeyModifiers::CONTROL,
-            }) => Some(Message::Close),
+            }) => Some(Message::Quit),
 
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab, ..
