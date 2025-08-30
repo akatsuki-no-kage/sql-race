@@ -20,7 +20,7 @@ use crate::{
         username_input::UsernameInput,
     },
     config::Config,
-    repository::ScoreRepository,
+    repository,
 };
 
 pub use id::*;
@@ -34,8 +34,6 @@ where
     pub inner: Application<Id, Message, NoUserEvent>,
 
     pub username: Option<String>,
-
-    pub score_repository: ScoreRepository,
 
     pub config: Config,
 
@@ -56,12 +54,9 @@ impl Default for App<CrosstermTerminalAdapter> {
                 .tick_interval(Duration::from_secs(config.tick_rate)),
         );
 
-        let score_repository = ScoreRepository::new(&config.database_file).unwrap();
-
         let mut app = Self {
             inner,
             username: None,
-            score_repository,
             config,
             screen: Screen::Home,
             quit: false,
@@ -98,7 +93,7 @@ where
                 )
                 .unwrap();
 
-                let scores = self.score_repository.get_all().unwrap();
+                let scores = repository::score::get_all(&self.config.database_file).unwrap();
                 self.mount(
                     Id::ScoreTable,
                     Box::new(ScoreTable::new(scores)),

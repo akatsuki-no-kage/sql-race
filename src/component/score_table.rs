@@ -6,7 +6,7 @@ use tuirealm::{
     props::{Alignment, BorderSides, Borders, Color, Style, TextSpan},
 };
 
-use crate::{app::Message, repository::Score};
+use crate::{app::Message, repository::score::Score};
 
 #[derive(MockComponent)]
 pub struct ScoreTable {
