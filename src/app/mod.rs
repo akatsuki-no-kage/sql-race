@@ -111,8 +111,14 @@ impl<T: TerminalAdapter> App<T> {
             Screen::Game => {
                 let chunks =
                     Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(area);
+                let header_chunks =
+                    Layout::horizontal([Constraint::Fill(1), Constraint::Fill(1)]).split(chunks[0]);
 
-                vec![(Id::Timer, chunks[0]), (Id::Editor, chunks[1])]
+                vec![
+                    (Id::Timer, header_chunks[0]),
+                    (Id::Score, header_chunks[1]),
+                    (Id::Editor, chunks[1]),
+                ]
             }
         }
     }
