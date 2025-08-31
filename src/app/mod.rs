@@ -187,7 +187,7 @@ impl<T: TerminalAdapter> App<T> {
     fn toggle(&mut self, id: &Id) -> Option<Message> {
         match self.inner.focus() {
             Some(current) if current == id => self.inner.blur().unwrap(),
-            _ => self.inner.active(&Id::Help).unwrap(),
+            _ => self.inner.active(id).unwrap(),
         }
 
         Some(Message::None)
