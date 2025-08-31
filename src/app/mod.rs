@@ -84,8 +84,9 @@ where
 
         match message {
             Message::Quit => self.quit(),
-            Message::ToggleHelp => self.toggle_help(),
+            Message::ToggleHelp => self.toggle(&Id::Help),
             Message::Start(username) => self.start(username),
+            Message::ToggleSchema => self.toggle(&Id::SchemaView),
             Message::Run => self.run(),
             Message::Submit => self.submit(),
             Message::NextQuestion => self.next_question(),
@@ -183,9 +184,9 @@ impl<T: TerminalAdapter> App<T> {
             .unwrap();
     }
 
-    fn toggle_help(&mut self) -> Option<Message> {
+    fn toggle(&mut self, id: &Id) -> Option<Message> {
         match self.inner.focus() {
-            Some(id) if id == &Id::Help => self.inner.blur().unwrap(),
+            Some(current) if current == id => self.inner.blur().unwrap(),
             _ => self.inner.active(&Id::Help).unwrap(),
         }
 
