@@ -3,7 +3,7 @@ use tuirealm::{
     Component, Event, MockComponent, NoUserEvent,
     command::{Cmd, CmdResult, Direction, Position},
     event::{Key, KeyEvent},
-    props::{Alignment, BorderSides, Borders, Color, TextSpan},
+    props::{Alignment, BorderSides, Borders, Color, Style, TextSpan},
 };
 
 use crate::app::Message;
@@ -22,6 +22,7 @@ impl QueryError {
                         .sides(BorderSides::all())
                         .color(Color::Red),
                 )
+                .inactive(Style::default().fg(Color::Red))
                 .title("Question", Alignment::Center)
                 .text_rows(error.to_string().lines().map(TextSpan::new)),
         }
