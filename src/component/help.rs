@@ -46,7 +46,7 @@ impl Default for Help {
                         .add_col(TextSpan::new("Focus previous component"))
                         .add_row()
                         .add_row()
-                        .add_col(TextSpan::new("Ctrl + s"))
+                        .add_col(TextSpan::new("Ctrl + t"))
                         .add_col(TextSpan::new("Show schema"))
                         .add_row()
                         .add_col(TextSpan::new("Ctrl + r"))

@@ -4,7 +4,7 @@ use rand::seq::IteratorRandom;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use rusqlite::Connection;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Column {
     pub name: String,
     pub is_primary_key: bool,
@@ -13,7 +13,7 @@ pub struct Column {
     pub default_value: Option<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TableInfo {
     pub name: String,
     pub columns: Vec<Column>,
@@ -21,9 +21,9 @@ pub struct TableInfo {
 
 impl TableInfo {
     fn new(name: String, conn: &Connection) -> rusqlite::Result<Self> {
-        let mut stmt = conn.prepare(&format!("PRAGMA table_info({})", &name))?;
+        let mut stmt = conn.prepare("SELECT * FROM pragma_table_info(?)")?;
         let columns = stmt
-            .query_and_then((), |raw| {
+            .query_and_then([&name], |raw| {
                 Ok::<_, rusqlite::Error>(Column {
                     name: raw.get("name")?,
                     is_primary_key: raw.get("pk")?,
@@ -47,6 +47,8 @@ pub struct Schema {
 impl Schema {
     pub fn new(raw: String) -> rusqlite::Result<Self> {
         let conn = Connection::open_in_memory()?;
+
+        conn.execute_batch(&raw)?;
 
         let mut stmt = conn.prepare("SELECT name FROM sqlite_schema WHERE type = 'table'")?;
         let table_infos = stmt

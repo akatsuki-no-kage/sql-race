@@ -12,8 +12,8 @@ use tuirealm::{
 
 use crate::{
     component::{
-        Editor, GlobalListener, Help, QueryError, Question, ResultTable, Score, ScoreTable, Timer,
-        UsernameInput,
+        Editor, GlobalListener, Help, QueryError, Question, ResultTable, SchemaView, Score,
+        ScoreTable, Timer, UsernameInput,
     },
     config::Config,
     repository, util,
@@ -84,8 +84,9 @@ where
 
         match message {
             Message::Quit => self.quit(),
-            Message::ToggleHelp => self.toggle_help(),
+            Message::ToggleHelp => self.toggle(&Id::Help),
             Message::Start(username) => self.start(username),
+            Message::ToggleSchema => self.toggle(&Id::SchemaView),
             Message::Run => self.run(),
             Message::Submit => self.submit(),
             Message::NextQuestion => self.next_question(),
@@ -99,15 +100,34 @@ where
 
 impl<T: TerminalAdapter> App<T> {
     fn get_components(focus: Option<&Id>, screen: Screen, area: Rect) -> Vec<(Id, Rect)> {
-        if focus == Some(&Id::Help) {
-            let chunks =
-                Layout::horizontal([Constraint::Min(0), Constraint::Max(80), Constraint::Min(0)])
-                    .split(area);
-            let chunks =
-                Layout::vertical([Constraint::Min(0), Constraint::Max(80), Constraint::Min(0)])
-                    .split(chunks[1]);
+        match focus {
+            Some(Id::Help) => {
+                let chunks = Layout::horizontal([
+                    Constraint::Min(0),
+                    Constraint::Max(80),
+                    Constraint::Min(0),
+                ])
+                .split(area);
+                let chunks =
+                    Layout::vertical([Constraint::Min(0), Constraint::Max(80), Constraint::Min(0)])
+                        .split(chunks[1]);
 
-            return vec![(Id::Help, chunks[1])];
+                return vec![(Id::Help, chunks[1])];
+            }
+            Some(Id::SchemaView) => {
+                let chunks = Layout::horizontal([
+                    Constraint::Min(0),
+                    Constraint::Max(80),
+                    Constraint::Min(0),
+                ])
+                .split(area);
+                let chunks =
+                    Layout::vertical([Constraint::Min(0), Constraint::Max(80), Constraint::Min(0)])
+                        .split(chunks[1]);
+
+                return vec![(Id::SchemaView, chunks[1])];
+            }
+            _ => {}
         }
 
         match screen {
@@ -164,10 +184,10 @@ impl<T: TerminalAdapter> App<T> {
             .unwrap();
     }
 
-    fn toggle_help(&mut self) -> Option<Message> {
+    fn toggle(&mut self, id: &Id) -> Option<Message> {
         match self.inner.focus() {
-            Some(id) if id == &Id::Help => self.inner.blur().unwrap(),
-            _ => self.inner.active(&Id::Help).unwrap(),
+            Some(current) if current == id => self.inner.blur().unwrap(),
+            _ => self.inner.active(id).unwrap(),
         }
 
         Some(Message::None)
@@ -231,6 +251,7 @@ impl<T: TerminalAdapter> App<T> {
             return Some(Message::End);
         }
 
+        self.remount(Id::SchemaView);
         self.remount(Id::Editor);
         self.remount(Id::Question);
         self.remount(Id::Result);
@@ -273,6 +294,13 @@ impl<T: TerminalAdapter> App<T> {
 
             Id::UsernameInput => (Box::new(UsernameInput::default()), Vec::new()),
 
+            Id::SchemaView => (
+                Box::new(SchemaView::new(
+                    self.current_question().schema.table_infos.clone(),
+                )),
+                Vec::new(),
+            ),
+
             Id::Timer => (
                 Box::new(Timer::new(
                     Duration::from_secs(self.config.game_duration),
@@ -312,6 +340,7 @@ impl<T: TerminalAdapter> App<T> {
                 self.inner.active(&Id::UsernameInput).unwrap();
             }
             Screen::Game => {
+                self.remount(Id::SchemaView);
                 self.remount(Id::Timer);
                 self.remount(Id::Score);
                 self.remount(Id::Question);
@@ -326,6 +355,13 @@ impl<T: TerminalAdapter> App<T> {
     }
 
     fn active(&mut self, offset: isize) -> Option<Message> {
+        if [Id::Help, Id::SchemaView]
+            .map(Some)
+            .contains(&self.inner.focus().cloned())
+        {
+            return None;
+        }
+
         let active_list = match self.screen {
             Screen::Home => [Id::ScoreTable, Id::UsernameInput].as_slice(),
             Screen::Game => [Id::Editor, Id::Result, Id::Question].as_slice(),

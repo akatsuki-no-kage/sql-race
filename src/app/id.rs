@@ -4,6 +4,7 @@ pub enum Id {
     Help,
     ScoreTable,
     UsernameInput,
+    SchemaView,
     Timer,
     Score,
     Editor,
