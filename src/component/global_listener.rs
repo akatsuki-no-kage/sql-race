@@ -41,6 +41,11 @@ impl Component<Message, NoUserEvent> for GlobalListener {
                 ..
             }) => Some(Message::ToggleHelp),
 
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('r'),
+                modifiers: KeyModifiers::CONTROL,
+            }) => Some(Message::Run),
+
             _ => None,
         }
     }
