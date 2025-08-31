@@ -87,6 +87,7 @@ where
             Message::ToggleHelp => self.toggle_help(),
             Message::Start(username) => self.start(username),
             Message::Run => self.run(),
+            Message::Submit => self.submit(),
             Message::NextQuestion => self.next_question(),
             Message::End => self.end(),
             Message::ChangeScreen(screen) => self.change_screen(screen),
@@ -198,6 +199,26 @@ impl<T: TerminalAdapter> App<T> {
 
         self.inner
             .remount(Id::Result, component, Vec::new())
+            .unwrap();
+
+        Some(Message::None)
+    }
+
+    fn submit(&mut self) -> Option<Message> {
+        let current_question = self.current_question();
+
+        let schema = current_question.schema.raw.as_str();
+        let user_query = self.get_query();
+        let answer_query = current_question.answer.as_str();
+
+        let error = match util::query::is_equal(&user_query, answer_query, schema) {
+            Ok(true) => return Some(Message::NextQuestion),
+            Ok(false) => "Incorrect answer".to_string(),
+            Err(error) => error.to_string(),
+        };
+
+        self.inner
+            .remount(Id::Result, Box::new(QueryError::new(error)), Vec::new())
             .unwrap();
 
         Some(Message::None)
