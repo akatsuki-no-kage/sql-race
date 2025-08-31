@@ -355,6 +355,13 @@ impl<T: TerminalAdapter> App<T> {
     }
 
     fn active(&mut self, offset: isize) -> Option<Message> {
+        if [Id::Help, Id::SchemaView]
+            .map(Some)
+            .contains(&self.inner.focus().cloned())
+        {
+            return None;
+        }
+
         let active_list = match self.screen {
             Screen::Home => [Id::ScoreTable, Id::UsernameInput].as_slice(),
             Screen::Game => [Id::Editor, Id::Result, Id::Question].as_slice(),
