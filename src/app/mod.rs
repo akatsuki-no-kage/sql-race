@@ -340,6 +340,7 @@ impl<T: TerminalAdapter> App<T> {
                 self.inner.active(&Id::UsernameInput).unwrap();
             }
             Screen::Game => {
+                self.remount(Id::SchemaView);
                 self.remount(Id::Timer);
                 self.remount(Id::Score);
                 self.remount(Id::Question);
