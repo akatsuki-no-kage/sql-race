@@ -48,6 +48,8 @@ impl Schema {
     pub fn new(raw: String) -> rusqlite::Result<Self> {
         let conn = Connection::open_in_memory()?;
 
+        conn.execute_batch(&raw)?;
+
         let mut stmt = conn.prepare("SELECT name FROM sqlite_schema WHERE type = 'table'")?;
         let table_infos = stmt
             .query_and_then((), |raw| {
