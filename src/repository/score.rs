@@ -25,7 +25,7 @@ impl<'a> TryFrom<&rusqlite::Row<'a>> for Score {
 const SCHEMA: &str = include_str!("../../schema.sql");
 
 fn new_connection(database_file: &str) -> rusqlite::Result<Connection> {
-    let existed = !fs::exists(database_file).unwrap();
+    let existed = fs::exists(database_file).unwrap();
 
     let connection = rusqlite::Connection::open(database_file)?;
     if !existed {
