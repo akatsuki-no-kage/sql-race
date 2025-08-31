@@ -6,6 +6,7 @@ pub enum Message {
     ToggleHelp,
     Start(String),
     Run,
+    Submit,
     NextQuestion,
     End,
     ChangeScreen(Screen),
