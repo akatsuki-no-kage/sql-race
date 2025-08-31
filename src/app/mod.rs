@@ -12,8 +12,8 @@ use tuirealm::{
 
 use crate::{
     component::{
-        Editor, GlobalListener, Help, QueryError, Question, ResultTable, Score, ScoreTable, Timer,
-        UsernameInput,
+        Editor, GlobalListener, Help, QueryError, Question, ResultTable, SchemaView, Score,
+        ScoreTable, Timer, UsernameInput,
     },
     config::Config,
     repository, util,
@@ -99,15 +99,34 @@ where
 
 impl<T: TerminalAdapter> App<T> {
     fn get_components(focus: Option<&Id>, screen: Screen, area: Rect) -> Vec<(Id, Rect)> {
-        if focus == Some(&Id::Help) {
-            let chunks =
-                Layout::horizontal([Constraint::Min(0), Constraint::Max(80), Constraint::Min(0)])
-                    .split(area);
-            let chunks =
-                Layout::vertical([Constraint::Min(0), Constraint::Max(80), Constraint::Min(0)])
-                    .split(chunks[1]);
+        match focus {
+            Some(Id::Help) => {
+                let chunks = Layout::horizontal([
+                    Constraint::Min(0),
+                    Constraint::Max(80),
+                    Constraint::Min(0),
+                ])
+                .split(area);
+                let chunks =
+                    Layout::vertical([Constraint::Min(0), Constraint::Max(80), Constraint::Min(0)])
+                        .split(chunks[1]);
 
-            return vec![(Id::Help, chunks[1])];
+                return vec![(Id::Help, chunks[1])];
+            }
+            Some(Id::SchemaView) => {
+                let chunks = Layout::horizontal([
+                    Constraint::Min(0),
+                    Constraint::Max(80),
+                    Constraint::Min(0),
+                ])
+                .split(area);
+                let chunks =
+                    Layout::vertical([Constraint::Min(0), Constraint::Max(80), Constraint::Min(0)])
+                        .split(chunks[1]);
+
+                return vec![(Id::SchemaView, chunks[1])];
+            }
+            _ => {}
         }
 
         match screen {
@@ -231,6 +250,7 @@ impl<T: TerminalAdapter> App<T> {
             return Some(Message::End);
         }
 
+        self.remount(Id::SchemaView);
         self.remount(Id::Editor);
         self.remount(Id::Question);
         self.remount(Id::Result);
@@ -272,6 +292,13 @@ impl<T: TerminalAdapter> App<T> {
             }
 
             Id::UsernameInput => (Box::new(UsernameInput::default()), Vec::new()),
+
+            Id::SchemaView => (
+                Box::new(SchemaView::new(
+                    self.current_question().schema.table_infos.clone(),
+                )),
+                Vec::new(),
+            ),
 
             Id::Timer => (
                 Box::new(Timer::new(
