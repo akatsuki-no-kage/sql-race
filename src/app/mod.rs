@@ -12,11 +12,11 @@ use tuirealm::{
 
 use crate::{
     component::{
-        Editor, GlobalListener, Help, Question, ResultTable, Score, ScoreTable, Timer,
+        Editor, GlobalListener, Help, QueryError, Question, ResultTable, Score, ScoreTable, Timer,
         UsernameInput,
     },
     config::Config,
-    repository,
+    repository, util,
 };
 
 pub use id::*;
@@ -86,6 +86,8 @@ where
             Message::Quit => self.quit(),
             Message::ToggleHelp => self.toggle_help(),
             Message::Start(username) => self.start(username),
+            Message::Run => self.run(),
+            Message::Submit => self.submit(),
             Message::NextQuestion => self.next_question(),
             Message::End => self.end(),
             Message::ChangeScreen(screen) => self.change_screen(screen),
@@ -143,7 +145,7 @@ impl<T: TerminalAdapter> App<T> {
                     (Id::Timer, header_chunks[0]),
                     (Id::Score, header_chunks[1]),
                     (Id::Editor, editor_chunks[0]),
-                    (Id::ResultTable, editor_chunks[1]),
+                    (Id::Result, editor_chunks[1]),
                     (Id::Question, content_chunks[1]),
                 ]
             }
@@ -178,6 +180,50 @@ impl<T: TerminalAdapter> App<T> {
         Some(Message::ChangeScreen(Screen::Game))
     }
 
+    fn get_query(&self) -> String {
+        self.inner
+            .state(&Id::Editor)
+            .unwrap()
+            .unwrap_one()
+            .unwrap_string()
+    }
+
+    fn run(&mut self) -> Option<Message> {
+        let schema = self.current_question().schema.raw.as_str();
+        let query = self.get_query();
+
+        let component: Box<dyn Component<_, _>> = match util::query::run(&query, schema) {
+            Ok(data) => Box::new(ResultTable::new(Some(data))),
+            Err(error) => Box::new(QueryError::new(error.to_string())),
+        };
+
+        self.inner
+            .remount(Id::Result, component, Vec::new())
+            .unwrap();
+
+        Some(Message::None)
+    }
+
+    fn submit(&mut self) -> Option<Message> {
+        let current_question = self.current_question();
+
+        let schema = current_question.schema.raw.as_str();
+        let user_query = self.get_query();
+        let answer_query = current_question.answer.as_str();
+
+        let error = match util::query::is_equal(&user_query, answer_query, schema) {
+            Ok(true) => return Some(Message::NextQuestion),
+            Ok(false) => "Incorrect answer".to_string(),
+            Err(error) => error.to_string(),
+        };
+
+        self.inner
+            .remount(Id::Result, Box::new(QueryError::new(error)), Vec::new())
+            .unwrap();
+
+        Some(Message::None)
+    }
+
     fn next_question(&mut self) -> Option<Message> {
         self.question_index += 1;
 
@@ -187,7 +233,7 @@ impl<T: TerminalAdapter> App<T> {
 
         self.remount(Id::Editor);
         self.remount(Id::Question);
-        self.remount(Id::ResultTable);
+        self.remount(Id::Result);
 
         Some(Message::None)
     }
@@ -242,7 +288,7 @@ impl<T: TerminalAdapter> App<T> {
                 Vec::new(),
             ),
 
-            Id::ResultTable => (Box::new(ResultTable::new(None)), Vec::new()),
+            Id::Result => (Box::new(ResultTable::new(None)), Vec::new()),
 
             Id::Editor => (Box::new(Editor::default()), Vec::new()),
         };
@@ -269,7 +315,7 @@ impl<T: TerminalAdapter> App<T> {
                 self.remount(Id::Timer);
                 self.remount(Id::Score);
                 self.remount(Id::Question);
-                self.remount(Id::ResultTable);
+                self.remount(Id::Result);
                 self.remount(Id::Editor);
 
                 self.inner.active(&Id::Editor).unwrap();
@@ -282,7 +328,7 @@ impl<T: TerminalAdapter> App<T> {
     fn active(&mut self, offset: isize) -> Option<Message> {
         let active_list = match self.screen {
             Screen::Home => [Id::ScoreTable, Id::UsernameInput].as_slice(),
-            Screen::Game => [Id::Editor, Id::ResultTable, Id::Question].as_slice(),
+            Screen::Game => [Id::Editor, Id::Result, Id::Question].as_slice(),
         };
         let count = active_list.len() as isize;
 

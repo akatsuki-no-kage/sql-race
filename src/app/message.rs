@@ -5,6 +5,8 @@ pub enum Message {
     Quit,
     ToggleHelp,
     Start(String),
+    Run,
+    Submit,
     NextQuestion,
     End,
     ChangeScreen(Screen),

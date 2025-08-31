@@ -167,6 +167,10 @@ impl Component<Message, NoUserEvent> for Editor<'_> {
                 Some(Message::None)
             }
             Event::Keyboard(KeyEvent {
+                code: Key::Char('r') | Key::Char('s'),
+                modifiers: KeyModifiers::CONTROL,
+            }) => None,
+            Event::Keyboard(KeyEvent {
                 code: Key::Char(ch),
                 ..
             }) => {
