@@ -6,7 +6,7 @@ pub type Row = Vec<Value>;
 pub fn run(query: &str, schema: &str) -> rusqlite::Result<(Vec<String>, Vec<Row>)> {
     let conn = Connection::open_in_memory()?;
 
-    conn.execute(schema, ())?;
+    conn.execute_batch(schema)?;
 
     let mut stmt = conn.prepare(query)?;
     let column_count = stmt.column_count();
