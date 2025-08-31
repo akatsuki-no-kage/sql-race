@@ -1,7 +1,8 @@
 [package]
 name = "sql-race"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2024"
+repository = "https://github.com/akatsuki-no-kage/sql-race"
 
 [dependencies]
 anyhow = "1.0.89"
@@ -17,3 +18,8 @@ tui-realm-stdlib = "3.0.0"
 tui-textarea = "0.7.0"
 tuirealm = "3.0.1"
 tuirealm_derive = "2.0.1"
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
