@@ -5,6 +5,7 @@ pub enum Message {
     Quit,
     ToggleHelp,
     Start(String),
+    ViewSchema,
     Run,
     Submit,
     NextQuestion,
