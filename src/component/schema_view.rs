@@ -1,23 +1,24 @@
 use ratatui::{
     Frame,
-    layout::{Constraint, Rect},
+    layout::{Constraint, Layout, Rect},
 };
-use tui_realm_stdlib::{Container, Radio, Table};
+use tui_realm_stdlib::{Radio, Table};
 use tuirealm::{
     AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent, State,
     command::{Cmd, CmdResult, Direction, Position},
     event::{Key, KeyEvent},
-    props::{Alignment, BorderSides, Borders, Color, Layout, TextSpan},
+    props::{Alignment, BorderSides, Borders, Color, TextSpan},
 };
 
 use crate::{app::Message, repository::question::TableInfo};
 
 pub struct SchemaView {
-    component: Container,
+    radio: Radio,
+    table: Table,
     table_infos: Vec<TableInfo>,
 }
 
-fn update_table(info: TableInfo, table: &mut dyn MockComponent) {
+fn update_table(info: TableInfo, table: &mut Table) {
     table.attr(
         Attribute::Title,
         AttrValue::Title((info.name, Alignment::Center)),
@@ -42,31 +43,24 @@ fn update_table(info: TableInfo, table: &mut dyn MockComponent) {
 impl SchemaView {
     pub fn new(table_infos: Vec<TableInfo>) -> Self {
         let table_names = table_infos.iter().map(|t| t.name.as_str());
-        let radio_widget = Radio::default()
+        let radio = Radio::default()
             .borders(Borders::default().sides(BorderSides::all()))
             .title("Table names", Alignment::Center)
             .rewind(true)
             .choices(table_names);
 
-        let table_widget = Table::default()
+        let mut table = Table::default()
             .borders(Borders::default().sides(BorderSides::all()))
             .scroll(true)
             .step(5)
             .highlighted_color(Color::Cyan)
             .row_height(1)
             .headers(["Name", "Primary key", "Type", "Nullable", "Default"]);
-
-        let mut container = Container::default()
-            .layout(
-                Layout::default()
-                    .direction(ratatui::layout::Direction::Vertical)
-                    .constraints(&[Constraint::Length(3), Constraint::Min(0)]),
-            )
-            .children(vec![Box::new(radio_widget), Box::new(table_widget)]);
-        update_table(table_infos[0].clone(), container.children[1].as_mut());
+        update_table(table_infos[0].clone(), &mut table);
 
         Self {
-            component: container,
+            radio,
+            table,
             table_infos,
         }
     }
@@ -74,32 +68,31 @@ impl SchemaView {
 
 impl MockComponent for SchemaView {
     fn view(&mut self, frame: &mut Frame, area: Rect) {
-        self.component.view(frame, area)
+        let chunks = Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(area);
+
+        self.radio.view(frame, chunks[0]);
+        self.table.view(frame, chunks[1]);
     }
 
-    fn query(&self, attr: Attribute) -> Option<AttrValue> {
-        self.component.query(attr)
+    fn query(&self, _: Attribute) -> Option<AttrValue> {
+        None
     }
 
-    fn attr(&mut self, attr: Attribute, value: AttrValue) {
-        self.component.attr(attr, value)
-    }
+    fn attr(&mut self, _: Attribute, _: AttrValue) {}
 
     fn state(&self) -> State {
-        self.component.children[0].state()
+        self.radio.state()
     }
 
     fn perform(&mut self, cmd: Cmd) -> CmdResult {
         match cmd {
             Cmd::Move(Direction::Left) | Cmd::Move(Direction::Right) => {
                 let selected_index = self.state().unwrap_one().unwrap_usize();
-                update_table(
-                    self.table_infos[selected_index].clone(),
-                    self.component.children[1].as_mut(),
-                );
-                self.component.children[0].perform(cmd)
+                update_table(self.table_infos[selected_index].clone(), &mut self.table);
+
+                self.radio.perform(cmd)
             }
-            _ => self.component.children[1].perform(cmd),
+            _ => self.table.perform(cmd),
         }
     }
 }
