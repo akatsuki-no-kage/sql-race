@@ -194,7 +194,7 @@ impl<T: TerminalAdapter> App<T> {
 
         let component: Box<dyn Component<_, _>> = match util::query::run(&query, schema) {
             Ok(data) => Box::new(ResultTable::new(Some(data))),
-            Err(error) => Box::new(QueryError::new(error)),
+            Err(error) => Box::new(QueryError::new(error.to_string())),
         };
 
         self.inner
