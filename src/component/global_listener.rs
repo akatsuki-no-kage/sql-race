@@ -46,6 +46,11 @@ impl Component<Message, NoUserEvent> for GlobalListener {
                 modifiers: KeyModifiers::CONTROL,
             }) => Some(Message::Run),
 
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('s'),
+                modifiers: KeyModifiers::CONTROL,
+            }) => Some(Message::Submit),
+
             _ => None,
         }
     }
