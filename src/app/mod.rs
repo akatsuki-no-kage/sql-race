@@ -12,11 +12,11 @@ use tuirealm::{
 
 use crate::{
     component::{
-        Editor, GlobalListener, Help, Question, ResultTable, Score, ScoreTable, Timer,
+        Editor, GlobalListener, Help, QueryError, Question, ResultTable, Score, ScoreTable, Timer,
         UsernameInput,
     },
     config::Config,
-    repository,
+    repository, util,
 };
 
 pub use id::*;
@@ -86,6 +86,7 @@ where
             Message::Quit => self.quit(),
             Message::ToggleHelp => self.toggle_help(),
             Message::Start(username) => self.start(username),
+            Message::Run => self.run(),
             Message::NextQuestion => self.next_question(),
             Message::End => self.end(),
             Message::ChangeScreen(screen) => self.change_screen(screen),
@@ -176,6 +177,27 @@ impl<T: TerminalAdapter> App<T> {
         self.question_index = 0;
 
         Some(Message::ChangeScreen(Screen::Game))
+    }
+
+    fn run(&mut self) -> Option<Message> {
+        let schema = self.current_question().schema.raw.as_str();
+        let query = self
+            .inner
+            .state(&Id::Editor)
+            .unwrap()
+            .unwrap_one()
+            .unwrap_string();
+
+        let component: Box<dyn Component<_, _>> = match util::query::run(&query, schema) {
+            Ok(data) => Box::new(ResultTable::new(Some(data))),
+            Err(error) => Box::new(QueryError::new(error)),
+        };
+
+        self.inner
+            .remount(Id::Result, component, Vec::new())
+            .unwrap();
+
+        Some(Message::None)
     }
 
     fn next_question(&mut self) -> Option<Message> {
