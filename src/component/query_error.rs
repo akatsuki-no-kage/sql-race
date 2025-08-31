@@ -14,7 +14,7 @@ pub struct QueryError {
 }
 
 impl QueryError {
-    pub fn new(error: rusqlite::Error) -> Self {
+    pub fn new(error: String) -> Self {
         Self {
             component: Textarea::default()
                 .borders(
@@ -24,7 +24,7 @@ impl QueryError {
                 )
                 .inactive(Style::default().fg(Color::Red))
                 .title("Question", Alignment::Center)
-                .text_rows(error.to_string().lines().map(TextSpan::new)),
+                .text_rows(error.lines().map(TextSpan::new)),
         }
     }
 }
