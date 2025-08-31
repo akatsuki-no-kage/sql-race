@@ -44,7 +44,7 @@ impl Component<Message, NoUserEvent> for GlobalListener {
             Event::Keyboard(KeyEvent {
                 code: Key::Char('t'),
                 modifiers: KeyModifiers::CONTROL,
-            }) => Some(Message::ViewSchema),
+            }) => Some(Message::ToggleSchema),
 
             Event::Keyboard(KeyEvent {
                 code: Key::Char('r'),
