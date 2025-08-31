@@ -1,4 +1,7 @@
+use std::fs;
+
 use chrono::NaiveDateTime;
+use rusqlite::Connection;
 
 #[derive(Debug)]
 pub struct Score {
@@ -18,8 +21,22 @@ impl<'a> TryFrom<&rusqlite::Row<'a>> for Score {
         })
     }
 }
-pub fn insert(username: &str, score: u64, database_file: &str) -> rusqlite::Result<()> {
+
+const SCHEMA: &str = include_str!("../../schema.sql");
+
+fn new_connection(database_file: &str) -> rusqlite::Result<Connection> {
+    let existed = !fs::exists(database_file).unwrap();
+
     let connection = rusqlite::Connection::open(database_file)?;
+    if !existed {
+        connection.execute_batch(SCHEMA)?;
+    }
+
+    Ok(connection)
+}
+
+pub fn insert(username: &str, score: u64, database_file: &str) -> rusqlite::Result<()> {
+    let connection = new_connection(database_file)?;
 
     connection.execute(
         "INSERT INTO scores (username, score) VALUES (?, ?)",
@@ -30,7 +47,7 @@ pub fn insert(username: &str, score: u64, database_file: &str) -> rusqlite::Resu
 }
 
 pub fn get_all(database_file: &str) -> rusqlite::Result<Vec<Score>> {
-    let connection = rusqlite::Connection::open(database_file)?;
+    let connection = new_connection(database_file)?;
 
     let mut stmt = connection.prepare("SELECT * FROM scores ORDER BY score DESC")?;
 
