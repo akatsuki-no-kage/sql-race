@@ -21,7 +21,7 @@ pub struct SchemaView {
 fn update_table(info: TableInfo, table: &mut Table) {
     table.attr(
         Attribute::Title,
-        AttrValue::Title((info.name, Alignment::Center)),
+        AttrValue::Title((format!("Table: {}", info.name), Alignment::Center)),
     );
 
     let rows = info
