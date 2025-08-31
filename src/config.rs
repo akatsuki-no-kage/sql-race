@@ -11,7 +11,7 @@ const fn default_tick_rate() -> u64 {
 }
 
 fn default_database_file() -> String {
-    "score.db".to_string()
+    "data.db".to_string()
 }
 
 fn default_question_pack_dir() -> PathBuf {
