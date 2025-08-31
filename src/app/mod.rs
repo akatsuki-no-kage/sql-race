@@ -179,14 +179,17 @@ impl<T: TerminalAdapter> App<T> {
         Some(Message::ChangeScreen(Screen::Game))
     }
 
-    fn run(&mut self) -> Option<Message> {
-        let schema = self.current_question().schema.raw.as_str();
-        let query = self
-            .inner
+    fn get_query(&self) -> String {
+        self.inner
             .state(&Id::Editor)
             .unwrap()
             .unwrap_one()
-            .unwrap_string();
+            .unwrap_string()
+    }
+
+    fn run(&mut self) -> Option<Message> {
+        let schema = self.current_question().schema.raw.as_str();
+        let query = self.get_query();
 
         let component: Box<dyn Component<_, _>> = match util::query::run(&query, schema) {
             Ok(data) => Box::new(ResultTable::new(Some(data))),
