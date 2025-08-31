@@ -217,13 +217,7 @@ impl MockComponent for TextArea<'_> {
     }
 
     fn state(&self) -> State {
-        State::Vec(
-            self.widget
-                .lines()
-                .iter()
-                .map(|x| StateValue::String(x.to_string()))
-                .collect(),
-        )
+        State::One(StateValue::String(self.widget.lines().join("\n")))
     }
 
     fn perform(&mut self, cmd: Cmd) -> CmdResult {
