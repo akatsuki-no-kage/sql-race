@@ -21,9 +21,9 @@ pub struct TableInfo {
 
 impl TableInfo {
     fn new(name: String, conn: &Connection) -> rusqlite::Result<Self> {
-        let mut stmt = conn.prepare(&format!("PRAGMA table_info({})", &name))?;
+        let mut stmt = conn.prepare("SELECT * FROM pragma_table_info(?)")?;
         let columns = stmt
-            .query_and_then((), |raw| {
+            .query_and_then([&name], |raw| {
                 Ok::<_, rusqlite::Error>(Column {
                     name: raw.get("name")?,
                     is_primary_key: raw.get("pk")?,
