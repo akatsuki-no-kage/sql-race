@@ -4,7 +4,7 @@ use rand::seq::IteratorRandom;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use rusqlite::Connection;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Column {
     pub name: String,
     pub is_primary_key: bool,
@@ -13,7 +13,7 @@ pub struct Column {
     pub default_value: Option<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TableInfo {
     pub name: String,
     pub columns: Vec<Column>,
