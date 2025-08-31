@@ -60,10 +60,10 @@ impl SchemaView {
             .layout(
                 Layout::default()
                     .direction(ratatui::layout::Direction::Vertical)
-                    .constraints(&[Constraint::Length(0), Constraint::Min(0)]),
+                    .constraints(&[Constraint::Length(3), Constraint::Min(0)]),
             )
             .children(vec![Box::new(radio_widget), Box::new(table_widget)]);
-        update_table(table_infos[0].clone(), container.children[0].as_mut());
+        update_table(table_infos[0].clone(), container.children[1].as_mut());
 
         Self {
             component: container,
@@ -86,24 +86,21 @@ impl MockComponent for SchemaView {
     }
 
     fn state(&self) -> State {
-        self.component.children[1].state()
+        self.component.children[0].state()
     }
 
     fn perform(&mut self, cmd: Cmd) -> CmdResult {
-        let result = self.component.perform(cmd);
-
         match cmd {
             Cmd::Move(Direction::Left) | Cmd::Move(Direction::Right) => {
                 let selected_index = self.state().unwrap_one().unwrap_usize();
                 update_table(
                     self.table_infos[selected_index].clone(),
-                    self.component.children[0].as_mut(),
+                    self.component.children[1].as_mut(),
                 );
+                self.component.children[0].perform(cmd)
             }
-            _ => {}
+            _ => self.component.children[1].perform(cmd),
         }
-
-        result
     }
 }
 
