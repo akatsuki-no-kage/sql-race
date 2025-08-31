@@ -74,11 +74,13 @@ impl MockComponent for SchemaView {
         self.table.view(frame, chunks[1]);
     }
 
-    fn query(&self, _: Attribute) -> Option<AttrValue> {
-        None
+    fn query(&self, attr: Attribute) -> Option<AttrValue> {
+        self.table.query(attr)
     }
 
-    fn attr(&mut self, _: Attribute, _: AttrValue) {}
+    fn attr(&mut self, attr: Attribute, value: AttrValue) {
+        self.table.attr(attr, value)
+    }
 
     fn state(&self) -> State {
         self.radio.state()
