@@ -7,7 +7,7 @@ use tuirealm::{
     AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent, State,
     command::{Cmd, CmdResult, Direction, Position},
     event::{Key, KeyEvent},
-    props::{Alignment, BorderSides, Borders, Color, TextSpan},
+    props::{Alignment, BorderSides, Borders, Color, Style, TextSpan},
 };
 
 use crate::{app::Message, repository::question::TableInfo};
@@ -50,7 +50,12 @@ impl SchemaView {
             .choices(table_names);
 
         let mut table = Table::default()
-            .borders(Borders::default().sides(BorderSides::all()))
+            .borders(
+                Borders::default()
+                    .sides(BorderSides::all())
+                    .color(Color::Green),
+            )
+            .inactive(Style::reset())
             .scroll(true)
             .step(5)
             .highlighted_color(Color::Cyan)
