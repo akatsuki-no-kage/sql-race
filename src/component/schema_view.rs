@@ -135,8 +135,9 @@ impl Component<Message, NoUserEvent> for SchemaView {
             _ => Cmd::None,
         };
 
-        self.perform(cmd);
-
-        None
+        match self.perform(cmd) {
+            CmdResult::None => None,
+            _ => Some(Message::None),
+        }
     }
 }
