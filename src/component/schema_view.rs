@@ -87,10 +87,12 @@ impl MockComponent for SchemaView {
     fn perform(&mut self, cmd: Cmd) -> CmdResult {
         match cmd {
             Cmd::Move(Direction::Left) | Cmd::Move(Direction::Right) => {
+                let result = self.radio.perform(cmd);
+
                 let selected_index = self.state().unwrap_one().unwrap_usize();
                 update_table(self.table_infos[selected_index].clone(), &mut self.table);
 
-                self.radio.perform(cmd)
+                result
             }
             _ => self.table.perform(cmd),
         }
