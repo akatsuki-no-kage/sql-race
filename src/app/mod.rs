@@ -190,7 +190,7 @@ impl<T: TerminalAdapter> App<T> {
             _ => self.inner.active(id).unwrap(),
         }
 
-        Some(Message::None)
+        None
     }
 
     fn start(&mut self, username: String) -> Option<Message> {
@@ -221,7 +221,7 @@ impl<T: TerminalAdapter> App<T> {
             .remount(Id::Result, component, Vec::new())
             .unwrap();
 
-        Some(Message::None)
+        None
     }
 
     fn submit(&mut self) -> Option<Message> {
@@ -241,7 +241,7 @@ impl<T: TerminalAdapter> App<T> {
             .remount(Id::Result, Box::new(QueryError::new(error)), Vec::new())
             .unwrap();
 
-        Some(Message::None)
+        None
     }
 
     fn next_question(&mut self) -> Option<Message> {
@@ -256,7 +256,7 @@ impl<T: TerminalAdapter> App<T> {
         self.remount(Id::Question);
         self.remount(Id::Result);
 
-        Some(Message::None)
+        None
     }
 
     fn end(&mut self) -> Option<Message> {
@@ -274,7 +274,7 @@ impl<T: TerminalAdapter> App<T> {
         self.username = None;
         self.question_index = 0;
 
-        Some(Message::ChangeScreen(Screen::Home))
+        None
     }
 
     fn remount(&mut self, id: Id) {
@@ -351,7 +351,7 @@ impl<T: TerminalAdapter> App<T> {
             }
         }
 
-        Some(Message::None)
+        None
     }
 
     fn active(&mut self, offset: isize) -> Option<Message> {
@@ -380,7 +380,7 @@ impl<T: TerminalAdapter> App<T> {
             .active(&active_list[next_index as usize])
             .unwrap();
 
-        Some(Message::None)
+        None
     }
 
     fn quit(&mut self) -> Option<Message> {
