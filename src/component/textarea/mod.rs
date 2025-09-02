@@ -2,8 +2,11 @@ pub mod attribute;
 pub mod command;
 
 use arboard::Clipboard;
-use inkjet::Language;
+use inkjet::constants::HIGHLIGHT_NAMES;
 use inkjet::theme::Theme;
+use inkjet::tree_sitter_highlight::HighlightEvent;
+use inkjet::{Highlighter, Language};
+use ratatui::style::Color;
 use tui_textarea::{CursorMove, TextArea as TextAreaWidget};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{
@@ -152,6 +155,42 @@ impl<'a> TextArea<'a> {
         }
 
         unreachable!()
+    }
+
+    fn highlight(&mut self) {
+        self.widget.clear_custom_highlight();
+
+        let source = self.widget.lines().join("\n");
+        let mut highlighter = Highlighter::new();
+
+        let events = highlighter.highlight_raw(self.language, &source).unwrap();
+        let mut style = Style::default();
+
+        for event in events {
+            let event = event.unwrap();
+            match event {
+                HighlightEvent::Source { start, end } => {
+                    self.widget.custom_highlight(
+                        (self.to_2d_position(start), self.to_2d_position(end)),
+                        style,
+                        0,
+                    );
+                }
+                HighlightEvent::HighlightStart(highlight) => {
+                    let style_name = HIGHLIGHT_NAMES[highlight.0];
+
+                    let color = self
+                        .theme
+                        .get_style(style_name)
+                        .and_then(|s| s.fg)
+                        .unwrap_or(self.theme.fg);
+
+                    let color = Color::Rgb(color.r, color.g, color.b);
+                    style = Style::default().fg(color);
+                }
+                HighlightEvent::HighlightEnd => style = Style::reset(),
+            }
+        }
     }
 }
 
