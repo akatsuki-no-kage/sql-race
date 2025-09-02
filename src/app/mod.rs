@@ -274,7 +274,7 @@ impl<T: TerminalAdapter> App<T> {
         self.username = None;
         self.question_index = 0;
 
-        None
+        Some(Message::ChangeScreen(Screen::Home))
     }
 
     fn remount(&mut self, id: Id) {
