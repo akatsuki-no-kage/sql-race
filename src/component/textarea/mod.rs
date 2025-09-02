@@ -139,6 +139,20 @@ impl<'a> TextArea<'a> {
             }
         }
     }
+
+    fn to_2d_position(&self, raw: usize) -> (usize, usize) {
+        let lines = self.widget.lines();
+        let mut sum = 0;
+        for (row, line) in lines.iter().enumerate() {
+            sum += line.len() + 1;
+            if raw < sum {
+                sum -= line.len() + 1;
+                return (row, raw - sum);
+            }
+        }
+
+        unreachable!()
+    }
 }
 
 impl MockComponent for TextArea<'_> {
