@@ -23,7 +23,7 @@ impl QueryError {
                         .color(Color::Red),
                 )
                 .inactive(Style::default().fg(Color::Red))
-                .title("Question", Alignment::Center)
+                .title("Result", Alignment::Center)
                 .text_rows(error.lines().map(TextSpan::new)),
         }
     }
