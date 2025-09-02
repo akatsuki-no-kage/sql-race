@@ -46,6 +46,8 @@ impl SchemaView {
         let radio = Radio::default()
             .borders(Borders::default().sides(BorderSides::all()))
             .title("Table names", Alignment::Center)
+            .foreground(Color::Blue)
+            .inactive(Style::reset())
             .rewind(true)
             .choices(table_names);
 
@@ -60,6 +62,7 @@ impl SchemaView {
             .step(5)
             .highlighted_color(Color::Cyan)
             .row_height(1)
+            .rewind(true)
             .headers(["Name", "Primary key", "Type", "Nullable", "Default"]);
         update_table(table_infos[0].clone(), &mut table);
 
