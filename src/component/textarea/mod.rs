@@ -2,6 +2,11 @@ pub mod attribute;
 pub mod command;
 
 use arboard::Clipboard;
+use inkjet::constants::HIGHLIGHT_NAMES;
+use inkjet::theme::Theme;
+use inkjet::tree_sitter_highlight::HighlightEvent;
+use inkjet::{Highlighter, Language};
+use ratatui::style::Color;
 use tui_textarea::{CursorMove, TextArea as TextAreaWidget};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{
@@ -15,30 +20,18 @@ pub struct TextArea<'a> {
     props: Props,
     widget: TextAreaWidget<'a>,
     single_line: bool,
-}
-
-impl<I> From<I> for TextArea<'_>
-where
-    I: IntoIterator,
-    I::Item: Into<String>,
-{
-    fn from(i: I) -> Self {
-        Self::new(i.into_iter().map(|s| s.into()).collect::<Vec<String>>())
-    }
-}
-
-impl Default for TextArea<'_> {
-    fn default() -> Self {
-        Self::new(Vec::default())
-    }
+    language: Language,
+    theme: Theme,
 }
 
 impl<'a> TextArea<'a> {
-    pub fn new(lines: Vec<String>) -> Self {
+    pub fn new(lines: Vec<String>, language: Language, theme: Theme) -> Self {
         Self {
             props: Props::default(),
             widget: TextAreaWidget::new(lines),
             single_line: false,
+            language,
+            theme,
         }
     }
 
@@ -149,6 +142,56 @@ impl<'a> TextArea<'a> {
             }
         }
     }
+
+    fn to_2d_position(&self, raw: usize) -> (usize, usize) {
+        let lines = self.widget.lines();
+        let mut sum = 0;
+        for (row, line) in lines.iter().enumerate() {
+            sum += line.len() + 1;
+            if raw < sum {
+                sum -= line.len() + 1;
+                return (row, raw - sum);
+            }
+        }
+
+        unreachable!()
+    }
+
+    fn highlight(&mut self) {
+        self.widget.clear_custom_highlight();
+
+        let source = self.widget.lines().join("\n");
+        let mut highlighter = Highlighter::new();
+
+        let events = highlighter.highlight_raw(self.language, &source).unwrap();
+        let mut style = Style::default();
+
+        for event in events {
+            let event = event.unwrap();
+            match event {
+                HighlightEvent::Source { start, end } => {
+                    self.widget.custom_highlight(
+                        (self.to_2d_position(start), self.to_2d_position(end)),
+                        style,
+                        0,
+                    );
+                }
+                HighlightEvent::HighlightStart(highlight) => {
+                    let style_name = HIGHLIGHT_NAMES[highlight.0];
+
+                    let color = self
+                        .theme
+                        .get_style(style_name)
+                        .and_then(|s| s.fg)
+                        .unwrap_or(self.theme.fg);
+
+                    let color = Color::Rgb(color.r, color.g, color.b);
+                    style = Style::default().fg(color);
+                }
+                HighlightEvent::HighlightEnd => style = Style::reset(),
+            }
+        }
+    }
 }
 
 impl MockComponent for TextArea<'_> {
@@ -224,22 +267,27 @@ impl MockComponent for TextArea<'_> {
         match cmd {
             Cmd::Cancel => {
                 self.widget.delete_next_char();
+                self.highlight();
                 CmdResult::None
             }
             command::DEL_LINE_BY_END => {
                 self.widget.delete_line_by_end();
+                self.highlight();
                 CmdResult::None
             }
             command::DEL_LINE_BY_HEAD => {
                 self.widget.delete_line_by_head();
+                self.highlight();
                 CmdResult::None
             }
             command::DEL_NEXT_WORD => {
                 self.widget.delete_next_word();
+                self.highlight();
                 CmdResult::None
             }
             command::DEL_WORD => {
                 self.widget.delete_word();
+                self.highlight();
                 CmdResult::None
             }
             command::MOVE_PARAGRAPH_BACK => {
@@ -272,18 +320,22 @@ impl MockComponent for TextArea<'_> {
             }
             command::PASTE => {
                 self.paste();
+                self.highlight();
                 CmdResult::None
             }
             command::REDO => {
                 self.widget.redo();
+                self.highlight();
                 CmdResult::None
             }
             command::UNDO => {
                 self.widget.undo();
+                self.highlight();
                 CmdResult::None
             }
             Cmd::Delete => {
                 self.widget.delete_char();
+                self.highlight();
                 CmdResult::None
             }
             Cmd::GoTo(Position::Begin) => {
@@ -336,16 +388,19 @@ impl MockComponent for TextArea<'_> {
             }
             Cmd::Type('\t') => {
                 self.widget.insert_tab();
+                self.highlight();
                 CmdResult::None
             }
             Cmd::Type('\n') | command::NEWLINE => {
                 if !self.single_line {
                     self.widget.insert_newline();
+                    self.highlight();
                 }
                 CmdResult::None
             }
             Cmd::Type(ch) => {
                 self.widget.insert_char(ch);
+                self.highlight();
                 CmdResult::None
             }
             Cmd::Submit => CmdResult::Submit(self.state()),
