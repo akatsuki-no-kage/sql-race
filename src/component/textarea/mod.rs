@@ -2,6 +2,8 @@ pub mod attribute;
 pub mod command;
 
 use arboard::Clipboard;
+use inkjet::Language;
+use inkjet::theme::Theme;
 use tui_textarea::{CursorMove, TextArea as TextAreaWidget};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{
@@ -15,30 +17,18 @@ pub struct TextArea<'a> {
     props: Props,
     widget: TextAreaWidget<'a>,
     single_line: bool,
-}
-
-impl<I> From<I> for TextArea<'_>
-where
-    I: IntoIterator,
-    I::Item: Into<String>,
-{
-    fn from(i: I) -> Self {
-        Self::new(i.into_iter().map(|s| s.into()).collect::<Vec<String>>())
-    }
-}
-
-impl Default for TextArea<'_> {
-    fn default() -> Self {
-        Self::new(Vec::default())
-    }
+    language: Language,
+    theme: Theme,
 }
 
 impl<'a> TextArea<'a> {
-    pub fn new(lines: Vec<String>) -> Self {
+    pub fn new(lines: Vec<String>, language: Language, theme: Theme) -> Self {
         Self {
             props: Props::default(),
             widget: TextAreaWidget::new(lines),
             single_line: false,
+            language,
+            theme,
         }
     }
 

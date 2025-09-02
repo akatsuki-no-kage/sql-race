@@ -1,3 +1,7 @@
+use inkjet::{
+    Language,
+    theme::{Theme, vendored},
+};
 use tuirealm::{
     Component, Event, MockComponent, NoUserEvent,
     command::{Cmd, Direction, Position},
@@ -18,24 +22,28 @@ pub struct Editor<'a> {
 impl Default for Editor<'_> {
     fn default() -> Self {
         Self {
-            component: TextArea::default()
-                .borders(
-                    Borders::default()
-                        .color(Color::Green)
-                        .sides(BorderSides::all()),
-                )
-                .inactive(Style::reset())
-                .cursor_line_style(Style::default())
-                .cursor_style(Style::default().add_modifier(TextModifiers::REVERSED))
-                .line_number_style(
-                    Style::default()
-                        .fg(Color::LightBlue)
-                        .add_modifier(TextModifiers::ITALIC),
-                )
-                .max_histories(64)
-                .scroll_step(4)
-                .tab_length(4)
-                .title("Editor", Alignment::Center),
+            component: TextArea::new(
+                Vec::new(),
+                Language::Sql,
+                Theme::from_helix(vendored::DARK_PLUS).unwrap(),
+            )
+            .borders(
+                Borders::default()
+                    .color(Color::Green)
+                    .sides(BorderSides::all()),
+            )
+            .inactive(Style::reset())
+            .cursor_line_style(Style::default())
+            .cursor_style(Style::default().add_modifier(TextModifiers::REVERSED))
+            .line_number_style(
+                Style::default()
+                    .fg(Color::LightBlue)
+                    .add_modifier(TextModifiers::ITALIC),
+            )
+            .max_histories(64)
+            .scroll_step(4)
+            .tab_length(4)
+            .title("Editor", Alignment::Center),
         }
     }
 }
