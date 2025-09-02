@@ -267,22 +267,27 @@ impl MockComponent for TextArea<'_> {
         match cmd {
             Cmd::Cancel => {
                 self.widget.delete_next_char();
+                self.highlight();
                 CmdResult::None
             }
             command::DEL_LINE_BY_END => {
                 self.widget.delete_line_by_end();
+                self.highlight();
                 CmdResult::None
             }
             command::DEL_LINE_BY_HEAD => {
                 self.widget.delete_line_by_head();
+                self.highlight();
                 CmdResult::None
             }
             command::DEL_NEXT_WORD => {
                 self.widget.delete_next_word();
+                self.highlight();
                 CmdResult::None
             }
             command::DEL_WORD => {
                 self.widget.delete_word();
+                self.highlight();
                 CmdResult::None
             }
             command::MOVE_PARAGRAPH_BACK => {
@@ -315,18 +320,22 @@ impl MockComponent for TextArea<'_> {
             }
             command::PASTE => {
                 self.paste();
+                self.highlight();
                 CmdResult::None
             }
             command::REDO => {
                 self.widget.redo();
+                self.highlight();
                 CmdResult::None
             }
             command::UNDO => {
                 self.widget.undo();
+                self.highlight();
                 CmdResult::None
             }
             Cmd::Delete => {
                 self.widget.delete_char();
+                self.highlight();
                 CmdResult::None
             }
             Cmd::GoTo(Position::Begin) => {
@@ -379,16 +388,19 @@ impl MockComponent for TextArea<'_> {
             }
             Cmd::Type('\t') => {
                 self.widget.insert_tab();
+                self.highlight();
                 CmdResult::None
             }
             Cmd::Type('\n') | command::NEWLINE => {
                 if !self.single_line {
                     self.widget.insert_newline();
+                    self.highlight();
                 }
                 CmdResult::None
             }
             Cmd::Type(ch) => {
                 self.widget.insert_char(ch);
+                self.highlight();
                 CmdResult::None
             }
             Cmd::Submit => CmdResult::Submit(self.state()),
