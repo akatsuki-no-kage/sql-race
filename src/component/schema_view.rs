@@ -46,7 +46,7 @@ impl SchemaView {
         let radio = Radio::default()
             .borders(Borders::default().sides(BorderSides::all()))
             .title("Table names", Alignment::Center)
-            .foreground(Color::Blue)
+            .foreground(Color::Cyan)
             .inactive(Style::reset())
             .rewind(true)
             .choices(table_names);
