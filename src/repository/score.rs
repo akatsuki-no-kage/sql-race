@@ -37,7 +37,7 @@ fn new_connection(database_file: &str) -> rusqlite::Result<Connection> {
     Ok(connection)
 }
 
-pub fn is_user_exist(username: &str) -> rusqlite::Result<bool> {
+pub fn is_new_user(username: &str) -> rusqlite::Result<bool> {
     let connection = new_connection(&CONFIG.database_file)?;
 
     match connection
