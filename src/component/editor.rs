@@ -50,7 +50,7 @@ impl Default for Editor<'_> {
 
 impl Component<Message, NoUserEvent> for Editor<'_> {
     fn on(&mut self, event: Event<NoUserEvent>) -> Option<Message> {
-        match event {
+        let cmd = match event {
             Event::Keyboard(KeyEvent {
                 code: Key::Backspace,
                 ..
@@ -58,16 +58,12 @@ impl Component<Message, NoUserEvent> for Editor<'_> {
             | Event::Keyboard(KeyEvent {
                 code: Key::Char('h'),
                 modifiers: KeyModifiers::CONTROL,
-            }) => {
-                self.perform(Cmd::Delete);
-                Some(Message::None)
-            }
+            }) => Cmd::Delete,
+
             Event::Keyboard(KeyEvent {
                 code: Key::Delete, ..
-            }) => {
-                self.perform(Cmd::Cancel);
-                Some(Message::None)
-            }
+            }) => Cmd::Cancel,
+
             Event::Keyboard(KeyEvent {
                 code: Key::PageDown,
                 ..
@@ -75,117 +71,95 @@ impl Component<Message, NoUserEvent> for Editor<'_> {
             | Event::Keyboard(KeyEvent {
                 code: Key::Down,
                 modifiers: KeyModifiers::SHIFT,
-            }) => {
-                self.perform(Cmd::Scroll(Direction::Down));
-                Some(Message::None)
-            }
+            }) => Cmd::Scroll(Direction::Down),
+
             Event::Keyboard(KeyEvent {
                 code: Key::PageUp, ..
             })
             | Event::Keyboard(KeyEvent {
                 code: Key::Up,
                 modifiers: KeyModifiers::SHIFT,
-            }) => {
-                self.perform(Cmd::Scroll(Direction::Up));
-                Some(Message::None)
-            }
+            }) => Cmd::Scroll(Direction::Up),
+
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..
-            }) => {
-                self.perform(Cmd::Move(Direction::Down));
-                Some(Message::None)
-            }
+            }) => Cmd::Move(Direction::Down),
+
             Event::Keyboard(KeyEvent {
                 code: Key::Left,
                 modifiers: KeyModifiers::SHIFT,
-            }) => {
-                self.perform(textarea::command::MOVE_WORD_BACK);
-                Some(Message::None)
-            }
+            }) => textarea::command::MOVE_WORD_BACK,
+
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
-            }) => {
-                self.perform(Cmd::Move(Direction::Left));
-                Some(Message::None)
-            }
+            }) => Cmd::Move(Direction::Left),
+
             Event::Keyboard(KeyEvent {
                 code: Key::Right,
                 modifiers: KeyModifiers::SHIFT,
-            }) => {
-                self.perform(textarea::command::MOVE_WORD_FORWARD);
-                Some(Message::None)
-            }
+            }) => textarea::command::MOVE_WORD_FORWARD,
+
             Event::Keyboard(KeyEvent {
                 code: Key::Right, ..
-            }) => {
-                self.perform(Cmd::Move(Direction::Right));
-                Some(Message::None)
-            }
-            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
-                self.perform(Cmd::Move(Direction::Up));
-                Some(Message::None)
-            }
+            }) => Cmd::Move(Direction::Right),
+
+            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => Cmd::Move(Direction::Up),
+
             Event::Keyboard(KeyEvent { code: Key::End, .. })
             | Event::Keyboard(KeyEvent {
                 code: Key::Char('e'),
                 modifiers: KeyModifiers::CONTROL,
-            }) => {
-                self.perform(Cmd::GoTo(Position::End));
-                Some(Message::None)
-            }
+            }) => Cmd::GoTo(Position::End),
+
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             })
             | Event::Keyboard(KeyEvent {
                 code: Key::Char('m'),
                 modifiers: KeyModifiers::CONTROL,
-            }) => {
-                self.perform(textarea::command::NEWLINE);
-                Some(Message::None)
-            }
+            }) => textarea::command::NEWLINE,
+
             Event::Keyboard(KeyEvent {
                 code: Key::Home, ..
             })
             | Event::Keyboard(KeyEvent {
                 code: Key::Char('a'),
                 modifiers: KeyModifiers::CONTROL,
-            }) => {
-                self.perform(Cmd::GoTo(Position::Begin));
-                Some(Message::None)
-            }
+            }) => Cmd::GoTo(Position::Begin),
+
             Event::Keyboard(KeyEvent {
                 code: Key::Char('v'),
                 modifiers: KeyModifiers::CONTROL,
-            }) => {
-                self.perform(textarea::command::PASTE);
-                Some(Message::None)
-            }
+            }) => textarea::command::PASTE,
+
             Event::Keyboard(KeyEvent {
                 code: Key::Char('z'),
                 modifiers: KeyModifiers::CONTROL,
-            }) => {
-                self.perform(textarea::command::UNDO);
-                Some(Message::None)
-            }
+            }) => textarea::command::UNDO,
+
             Event::Keyboard(KeyEvent {
                 code: Key::Char('y'),
                 modifiers: KeyModifiers::CONTROL,
-            }) => {
-                self.perform(textarea::command::REDO);
-                Some(Message::None)
-            }
+            }) => textarea::command::REDO,
+
             Event::Keyboard(KeyEvent {
                 code: Key::Char('r') | Key::Char('s') | Key::Char('t'),
                 modifiers: KeyModifiers::CONTROL,
-            }) => None,
+            }) => Cmd::None,
+
             Event::Keyboard(KeyEvent {
                 code: Key::Char(ch),
                 ..
-            }) => {
-                self.perform(Cmd::Type(ch));
-                Some(Message::None)
-            }
-            _ => None,
+            }) => Cmd::Type(ch),
+
+            _ => Cmd::None,
+        };
+
+        self.perform(cmd);
+
+        match cmd {
+            Cmd::None => None,
+            _ => Some(Message::None),
         }
     }
 }
