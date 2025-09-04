@@ -15,7 +15,7 @@ use crate::{
         Editor, GlobalListener, Help, QueryError, Question, ResultTable, SchemaView, Score,
         ScoreTable, Timer, UsernameInput,
     },
-    config::Config,
+    config::CONFIG,
     repository, util,
 };
 
@@ -28,7 +28,6 @@ pub struct App<T: TerminalAdapter> {
 
     pub username: Option<String>,
 
-    pub config: Config,
     pub questions: Vec<repository::question::Question>,
     pub question_index: usize,
 
@@ -40,17 +39,15 @@ pub struct App<T: TerminalAdapter> {
 
 impl Default for App<CrosstermTerminalAdapter> {
     fn default() -> Self {
-        let config = Config::new().unwrap();
-
         let inner = Application::init(
             EventListenerCfg::default()
                 .crossterm_input_listener(Duration::from_millis(20), 3)
                 .poll_timeout(Duration::from_millis(10))
-                .tick_interval(Duration::from_secs(config.tick_rate)),
+                .tick_interval(Duration::from_secs(CONFIG.tick_rate)),
         );
 
         let questions =
-            repository::question::get_many(&config.question_pack_dir, config.question_count)
+            repository::question::get_many(&CONFIG.question_pack_dir, CONFIG.question_count)
                 .unwrap();
 
         let mut app = Self {
@@ -58,7 +55,6 @@ impl Default for App<CrosstermTerminalAdapter> {
 
             username: None,
 
-            config,
             questions,
             question_index: 0,
 
@@ -264,12 +260,7 @@ impl<T: TerminalAdapter> App<T> {
             return Some(Message::Quit);
         };
 
-        repository::score::insert(
-            username,
-            self.question_index as u64,
-            &self.config.database_file,
-        )
-        .unwrap();
+        repository::score::insert(username, self.question_index as u64).unwrap();
 
         self.username = None;
         self.question_index = 0;
@@ -287,7 +278,7 @@ impl<T: TerminalAdapter> App<T> {
             Id::Help => (Box::new(Help::default()), Vec::new()),
 
             Id::ScoreTable => {
-                let scores = repository::score::get_all(&self.config.database_file).unwrap();
+                let scores = repository::score::get_all().unwrap();
 
                 (Box::new(ScoreTable::new(scores)), Vec::new())
             }
@@ -303,8 +294,8 @@ impl<T: TerminalAdapter> App<T> {
 
             Id::Timer => (
                 Box::new(Timer::new(
-                    Duration::from_secs(self.config.game_duration),
-                    Duration::from_secs(self.config.tick_rate),
+                    Duration::from_secs(CONFIG.game_duration),
+                    Duration::from_secs(CONFIG.tick_rate),
                 )),
                 vec![Sub::new(SubEventClause::Tick, SubClause::Always)],
             ),

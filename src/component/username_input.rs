@@ -7,7 +7,7 @@ use tuirealm::{
     props::{Alignment, BorderSides, Borders, InputType, TextModifiers},
 };
 
-use crate::app::Message;
+use crate::{app::Message, repository};
 
 #[derive(MockComponent)]
 pub struct UsernameInput {
@@ -16,6 +16,11 @@ pub struct UsernameInput {
 
 impl Default for UsernameInput {
     fn default() -> Self {
+        let input_type = InputType::Custom(
+            |username| !username.is_empty() && repository::score::is_new_user(username).unwrap(),
+            |_, _| true,
+        );
+
         Self {
             component: Input::default()
                 .borders(
@@ -25,7 +30,7 @@ impl Default for UsernameInput {
                 )
                 .inactive(Style::reset())
                 .title("Name", Alignment::Center)
-                .input_type(InputType::Text)
+                .input_type(input_type)
                 .placeholder(
                     "Input your name",
                     Style::new()

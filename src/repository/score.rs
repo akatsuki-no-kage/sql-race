@@ -1,7 +1,9 @@
 use std::fs;
 
 use chrono::NaiveDateTime;
-use rusqlite::Connection;
+use rusqlite::{Connection, OptionalExtension};
+
+use crate::config::CONFIG;
 
 #[derive(Debug)]
 pub struct Score {
@@ -35,8 +37,24 @@ fn new_connection(database_file: &str) -> rusqlite::Result<Connection> {
     Ok(connection)
 }
 
-pub fn insert(username: &str, score: u64, database_file: &str) -> rusqlite::Result<()> {
-    let connection = new_connection(database_file)?;
+pub fn is_new_user(username: &str) -> rusqlite::Result<bool> {
+    let connection = new_connection(&CONFIG.database_file)?;
+
+    match connection
+        .query_row(
+            "SELECT id FROM scores WHERE username = ?",
+            [username],
+            |_| Ok(()),
+        )
+        .optional()
+    {
+        Ok(None) => Ok(true),
+        Ok(Some(_)) | Err(_) => Ok(false),
+    }
+}
+
+pub fn insert(username: &str, score: u64) -> rusqlite::Result<()> {
+    let connection = new_connection(&CONFIG.database_file)?;
 
     connection.execute(
         "INSERT INTO scores (username, score) VALUES (?, ?)",
@@ -46,8 +64,8 @@ pub fn insert(username: &str, score: u64, database_file: &str) -> rusqlite::Resu
     Ok(())
 }
 
-pub fn get_all(database_file: &str) -> rusqlite::Result<Vec<Score>> {
-    let connection = new_connection(database_file)?;
+pub fn get_all() -> rusqlite::Result<Vec<Score>> {
+    let connection = new_connection(&CONFIG.database_file)?;
 
     let mut stmt = connection.prepare("SELECT * FROM scores ORDER BY score DESC")?;
 
