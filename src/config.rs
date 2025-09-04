@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::LazyLock};
 
 use serde::Deserialize;
 
@@ -48,3 +48,5 @@ impl Config {
             .try_deserialize()
     }
 }
+
+pub static CONFIG: LazyLock<Config> = LazyLock::new(|| Config::new().unwrap());

@@ -3,6 +3,8 @@ use std::fs;
 use chrono::NaiveDateTime;
 use rusqlite::Connection;
 
+use crate::config::CONFIG;
+
 #[derive(Debug)]
 pub struct Score {
     pub username: String,
@@ -35,8 +37,8 @@ fn new_connection(database_file: &str) -> rusqlite::Result<Connection> {
     Ok(connection)
 }
 
-pub fn insert(username: &str, score: u64, database_file: &str) -> rusqlite::Result<()> {
-    let connection = new_connection(database_file)?;
+pub fn insert(username: &str, score: u64) -> rusqlite::Result<()> {
+    let connection = new_connection(&CONFIG.database_file)?;
 
     connection.execute(
         "INSERT INTO scores (username, score) VALUES (?, ?)",
@@ -46,8 +48,8 @@ pub fn insert(username: &str, score: u64, database_file: &str) -> rusqlite::Resu
     Ok(())
 }
 
-pub fn get_all(database_file: &str) -> rusqlite::Result<Vec<Score>> {
-    let connection = new_connection(database_file)?;
+pub fn get_all() -> rusqlite::Result<Vec<Score>> {
+    let connection = new_connection(&CONFIG.database_file)?;
 
     let mut stmt = connection.prepare("SELECT * FROM scores ORDER BY score DESC")?;
 
