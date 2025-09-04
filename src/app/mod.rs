@@ -6,7 +6,9 @@ use std::time::Duration;
 
 use ratatui::layout::{Constraint, Layout, Rect};
 use tuirealm::{
-    Application, Component, EventListenerCfg, NoUserEvent, Sub, SubClause, SubEventClause, Update,
+    Application, AttrValue, Attribute, Component, EventListenerCfg, NoUserEvent, Sub, SubClause,
+    SubEventClause, Update,
+    props::{PropPayload, PropValue},
     terminal::{CrosstermTerminalAdapter, TerminalAdapter, TerminalBridge},
 };
 
@@ -262,7 +264,6 @@ impl<T: TerminalAdapter> App<T> {
 
         repository::score::insert(username, self.question_index as u64).unwrap();
 
-        self.username = None;
         self.question_index = 0;
 
         Some(Message::ChangeScreen(Screen::Home))
@@ -315,6 +316,34 @@ impl<T: TerminalAdapter> App<T> {
         self.inner.remount(id, component, subs).unwrap();
     }
 
+    fn select_previous_user(&mut self) {
+        let Some(username) = &self.username else {
+            return;
+        };
+
+        let data = self
+            .inner
+            .query(&Id::ScoreTable, Attribute::Content)
+            .unwrap()
+            .unwrap()
+            .unwrap_table();
+
+        let row_index = data
+            .iter()
+            .position(|row| &row[0].content == username)
+            .unwrap();
+
+        self.inner
+            .attr(
+                &Id::ScoreTable,
+                Attribute::Value,
+                AttrValue::Payload(PropPayload::One(PropValue::Usize(row_index))),
+            )
+            .unwrap();
+
+        self.username = None;
+    }
+
     fn change_screen(&mut self, screen: Screen) -> Option<Message> {
         self.screen = screen;
 
@@ -327,6 +356,7 @@ impl<T: TerminalAdapter> App<T> {
             Screen::Home => {
                 self.remount(Id::ScoreTable);
                 self.remount(Id::UsernameInput);
+                self.select_previous_user();
 
                 self.inner.active(&Id::UsernameInput).unwrap();
             }
