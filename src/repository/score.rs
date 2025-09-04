@@ -1,7 +1,7 @@
 use std::fs;
 
 use chrono::NaiveDateTime;
-use rusqlite::Connection;
+use rusqlite::{Connection, OptionalExtension};
 
 use crate::config::CONFIG;
 
@@ -35,6 +35,22 @@ fn new_connection(database_file: &str) -> rusqlite::Result<Connection> {
     }
 
     Ok(connection)
+}
+
+pub fn is_user_exist(username: &str) -> rusqlite::Result<bool> {
+    let connection = new_connection(&CONFIG.database_file)?;
+
+    match connection
+        .query_row(
+            "SELECT id FROM scores WHERE username = ?",
+            [username],
+            |_| Ok(()),
+        )
+        .optional()
+    {
+        Ok(None) => Ok(true),
+        Ok(Some(_)) | Err(_) => Ok(false),
+    }
 }
 
 pub fn insert(username: &str, score: u64) -> rusqlite::Result<()> {
