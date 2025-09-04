@@ -5,7 +5,7 @@ use inkjet::{
 use tuirealm::{
     Component, Event, MockComponent, NoUserEvent,
     command::{Cmd, Direction, Position},
-    event::{Key, KeyEvent, KeyModifiers},
+    event::{Key, KeyEvent, KeyModifiers, MouseEvent, MouseEventKind},
     props::{Alignment, BorderSides, Borders, Color, Style, TextModifiers},
 };
 
@@ -71,6 +71,10 @@ impl Component<Message, NoUserEvent> for Editor<'_> {
             | Event::Keyboard(KeyEvent {
                 code: Key::Down,
                 modifiers: KeyModifiers::SHIFT,
+            })
+            | Event::Mouse(MouseEvent {
+                kind: MouseEventKind::ScrollDown,
+                ..
             }) => Cmd::Scroll(Direction::Down),
 
             Event::Keyboard(KeyEvent {
@@ -79,6 +83,10 @@ impl Component<Message, NoUserEvent> for Editor<'_> {
             | Event::Keyboard(KeyEvent {
                 code: Key::Up,
                 modifiers: KeyModifiers::SHIFT,
+            })
+            | Event::Mouse(MouseEvent {
+                kind: MouseEventKind::ScrollUp,
+                ..
             }) => Cmd::Scroll(Direction::Up),
 
             Event::Keyboard(KeyEvent {
