@@ -15,8 +15,7 @@ rayon = "1.11.0"
 rusqlite = { version = "0.37.0", features = ["bundled", "chrono"] }
 serde = { version = "1.0.219", features = ["derive"] }
 tree-sitter-highlight = "0.25.8"
-tree-sitter-language = "0.1.5"
-tree-sitter-sequel = "0.3.8"
+autumnus = { version = "0.7.3", default-features = false, features = ["lang-sql"] }
 tui-realm-stdlib = "3.0.0"
 tui-textarea = { git = "https://github.com/mcclure/tui-textarea", branch = "custom-highlight" }
 tuirealm = "3.0.1"
