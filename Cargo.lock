@@ -1192,6 +1192,7 @@ dependencies = [
  "serde",
  "tree-sitter-highlight",
  "tree-sitter-language",
+ "tree-sitter-sequel",
  "tui-realm-stdlib",
  "tui-textarea",
  "tuirealm",
@@ -1335,6 +1336,16 @@ name = "tree-sitter-language"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c4013970217383f67b18aef68f6fb2e8d409bc5755227092d32efb0422ba24b8"
+
+[[package]]
+name = "tree-sitter-sequel"
+version = "0.3.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f2550ddbfd7f52da6d7fd4bb145e20dc67f3a0cdfdae068034a2a16101e668b"
+dependencies = [
+ "cc",
+ "tree-sitter-language",
+]
 
 [[package]]
 name = "tree_magic_mini"
