@@ -1,14 +1,17 @@
-use std::{path::PathBuf, sync::LazyLock};
+mod game;
+mod question;
+
+use std::sync::LazyLock;
 
 use serde::Deserialize;
 
+use crate::config::{game::GameConfig, question::QuestionConfig};
+
 #[derive(Debug, Deserialize)]
 pub struct Config {
-    pub game_duration: u64,
-    pub tick_rate: u64,
+    pub game: GameConfig,
+    pub question: QuestionConfig,
     pub database_file: String,
-    pub question_pack_dir: PathBuf,
-    pub question_count: usize,
 }
 
 impl Config {

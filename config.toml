@@ -1,5 +1,9 @@
-game_duration = 180
-tick_rate = 1
 database_file = "data.db"
-question_pack_dir = "questions"
-question_count = 10
+
+[game]
+duration = 180
+tick_rate = 1
+
+[question]
+root = "questions"
+count = 10
