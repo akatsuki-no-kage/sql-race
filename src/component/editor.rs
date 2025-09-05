@@ -1,7 +1,4 @@
-use inkjet::{
-    Language,
-    theme::{Theme, vendored},
-};
+use autumnus::{languages::Language, themes};
 use tuirealm::{
     Component, Event, MockComponent, NoUserEvent,
     command::{Cmd, Direction, Position},
@@ -24,8 +21,8 @@ impl Default for Editor<'_> {
         Self {
             component: TextArea::new(
                 Vec::new(),
-                Language::Sql,
-                Theme::from_helix(vendored::DARK_PLUS).unwrap(),
+                Language::SQL,
+                themes::get("vscode_dark").unwrap().clone(),
             )
             .borders(
                 Borders::default()

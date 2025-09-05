@@ -2,11 +2,9 @@ pub mod attribute;
 pub mod command;
 
 use arboard::Clipboard;
-use inkjet::constants::HIGHLIGHT_NAMES;
-use inkjet::theme::Theme;
-use inkjet::tree_sitter_highlight::HighlightEvent;
-use inkjet::{Highlighter, Language};
+use autumnus::{constants::HIGHLIGHT_NAMES, languages::Language, themes::Theme};
 use ratatui::style::Color;
+use tree_sitter_highlight::{HighlightEvent, Highlighter};
 use tui_textarea::{CursorMove, TextArea as TextAreaWidget};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{
@@ -163,7 +161,14 @@ impl<'a> TextArea<'a> {
         let source = self.widget.lines().join("\n");
         let mut highlighter = Highlighter::new();
 
-        let events = highlighter.highlight_raw(self.language, &source).unwrap();
+        let events = highlighter
+            .highlight(
+                self.language.config(),
+                source.as_bytes(),
+                None,
+                |injected| Some(Language::guess(injected, "").config()),
+            )
+            .unwrap();
         let mut style = Style::default();
 
         for event in events {
@@ -179,14 +184,21 @@ impl<'a> TextArea<'a> {
                 HighlightEvent::HighlightStart(highlight) => {
                     let style_name = HIGHLIGHT_NAMES[highlight.0];
 
-                    let color = self
+                    style = match &self
                         .theme
                         .get_style(style_name)
-                        .and_then(|s| s.fg)
-                        .unwrap_or(self.theme.fg);
+                        .and_then(|style| style.fg.as_deref())
+                    {
+                        Some(hex) => {
+                            let r = u8::from_str_radix(&hex[1..3], 16).unwrap();
+                            let g = u8::from_str_radix(&hex[3..5], 16).unwrap();
+                            let b = u8::from_str_radix(&hex[5..7], 16).unwrap();
 
-                    let color = Color::Rgb(color.r, color.g, color.b);
-                    style = Style::default().fg(color);
+                            let color = Color::Rgb(r, g, b);
+                            Style::default().fg(color)
+                        }
+                        None => Style::reset(),
+                    };
                 }
                 HighlightEvent::HighlightEnd => style = Style::reset(),
             }
