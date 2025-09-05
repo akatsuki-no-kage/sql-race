@@ -1,4 +1,4 @@
-Question 3: List all books sorted by the number of pages in ascending order.
+List all books sorted by the number of pages in ascending order.
 
 Hint: To sort results, use the ORDER BY clause.
       Add ASC (ascending) or DESC (descending) to specify the order.
