@@ -1,0 +1,9 @@
+database_file = "data.db"
+
+[game]
+duration = 180
+tick_rate = 1
+
+[question]
+root = "questions"
+count = 10

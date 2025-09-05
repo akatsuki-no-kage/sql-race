@@ -45,12 +45,11 @@ impl Default for App<CrosstermTerminalAdapter> {
             EventListenerCfg::default()
                 .crossterm_input_listener(Duration::from_millis(20), 3)
                 .poll_timeout(Duration::from_millis(10))
-                .tick_interval(Duration::from_secs(CONFIG.tick_rate)),
+                .tick_interval(Duration::from_secs(CONFIG.game.tick_rate)),
         );
 
         let questions =
-            repository::question::get_many(&CONFIG.question_pack_dir, CONFIG.question_count)
-                .unwrap();
+            repository::question::get_many(&CONFIG.question.root, CONFIG.question.count).unwrap();
 
         let mut app = Self {
             inner,
@@ -295,8 +294,8 @@ impl<T: TerminalAdapter> App<T> {
 
             Id::Timer => (
                 Box::new(Timer::new(
-                    Duration::from_secs(CONFIG.game_duration),
-                    Duration::from_secs(CONFIG.tick_rate),
+                    Duration::from_secs(CONFIG.game.duration),
+                    Duration::from_secs(CONFIG.game.tick_rate),
                 )),
                 vec![Sub::new(SubEventClause::Tick, SubClause::Always)],
             ),

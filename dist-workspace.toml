@@ -17,5 +17,6 @@ install-path = "CARGO_HOME"
 install-updater = false
 
 include = [
-   "./questions/",
+    "./questions/",
+    "config.toml"
 ]
