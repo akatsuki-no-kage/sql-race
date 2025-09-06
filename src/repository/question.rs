@@ -1,10 +1,6 @@
-use std::{
-    fs, io,
-    path::{Path, PathBuf},
-};
+use std::{fs, io, path::PathBuf};
 
 use rand::seq::IteratorRandom;
-use rayon::iter::{IntoParallelRefIterator, ParallelBridge, ParallelIterator};
 use rusqlite::Connection;
 
 use crate::config::{CONFIG, question::Level};

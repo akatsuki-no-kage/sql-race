@@ -48,8 +48,7 @@ impl Default for App<CrosstermTerminalAdapter> {
                 .tick_interval(Duration::from_secs(CONFIG.game.tick_rate)),
         );
 
-        let questions =
-            repository::question::get_all().unwrap();
+        let questions = repository::question::get_all().unwrap();
 
         let mut app = Self {
             inner,
