@@ -6,4 +6,8 @@ tick_rate = 1
 
 [question]
 root = "questions"
-count = 10
+
+[question.count]
+easy = 4
+medium = 3
+hard = 3
