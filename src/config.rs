@@ -3,9 +3,17 @@ use std::sync::LazyLock;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Mode {
+    Practice,
+    Challenge,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct Config {
     pub game_duration: u64,
     pub tick_rate: u64,
+    pub mode: Mode,
     pub database_file: String,
 }
 
