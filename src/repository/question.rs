@@ -95,7 +95,7 @@ impl TryFrom<RawQuestion> for Question {
 
 pub fn get_all() -> rusqlite::Result<Vec<Question>> {
     let mut question_pack: QuestionPack = config::Config::builder()
-        .add_source(config::File::with_name("config"))
+        .add_source(config::File::with_name("question"))
         .build()
         .and_then(|x| x.try_deserialize())
         .unwrap();
