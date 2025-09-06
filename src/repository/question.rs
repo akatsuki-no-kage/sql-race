@@ -1,9 +1,10 @@
-use std::{fs, io, path::PathBuf};
+use std::{collections::HashMap, fs, io, path::PathBuf};
 
 use rand::seq::IteratorRandom;
 use rusqlite::Connection;
+use serde::Deserialize;
 
-use crate::config::{CONFIG, question::Level};
+use crate::config::{CONFIG, Mode};
 
 #[derive(Debug, Clone)]
 pub struct Column {
@@ -63,6 +64,15 @@ impl Schema {
     }
 }
 
+#[derive(Debug, Deserialize)]
+struct RawQuestion {
+    question: String,
+    answer: String,
+    schema: String,
+}
+
+type QuestionPack = HashMap<Mode, Vec<RawQuestion>>;
+
 #[derive(Debug)]
 pub struct Question {
     pub question: String,
@@ -70,48 +80,28 @@ pub struct Question {
     pub schema: Schema,
 }
 
-fn get_paths(level: Level, count: usize) -> io::Result<Vec<PathBuf>> {
-    let level: &str = level.into();
+impl TryFrom<RawQuestion> for Question {
+    type Error = rusqlite::Error;
 
-    let mut question_dirs = fs::read_dir(CONFIG.question.root.join(level))?
-        .filter_map(|x| x.ok().map(|x| x.path()))
-        .choose_multiple(&mut rand::rng(), count);
-    question_dirs.sort_by_key(|x| {
-        x.file_name()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .parse::<usize>()
-            .unwrap()
-    });
+    fn try_from(raw: RawQuestion) -> Result<Self, Self::Error> {
+        let schema = Schema::new(raw.schema)?;
 
-    Ok(question_dirs)
-}
-
-fn get_all_paths() -> impl Iterator<Item = PathBuf> {
-    [Level::Easy, Level::Medium, Level::Hard]
-        .map(|level| get_paths(level, CONFIG.question.count[&level]).unwrap())
-        .into_iter()
-        .flatten()
-}
-
-pub fn get_all() -> io::Result<Vec<Question>> {
-    let question_dirs = get_all_paths();
-
-    question_dirs
-        .map(|dir| {
-            let question = fs::read_to_string(dir.join("question.txt"))?;
-
-            let answer = fs::read_to_string(dir.join("answer.sql"))?;
-
-            let raw_schema = fs::read_to_string(dir.join("schema.sql"))?;
-            let schema = Schema::new(raw_schema).map_err(io::Error::other)?;
-
-            Ok::<_, io::Error>(Question {
-                question,
-                answer,
-                schema,
-            })
+        Ok(Self {
+            question: raw.question,
+            answer: raw.answer,
+            schema,
         })
-        .collect()
+    }
+}
+
+pub fn get_all() -> rusqlite::Result<Vec<Question>> {
+    let mut question_pack: QuestionPack = config::Config::builder()
+        .add_source(config::File::with_name("config"))
+        .build()
+        .and_then(|x| x.try_deserialize())
+        .unwrap();
+
+    let questions = question_pack.remove(&CONFIG.mode).unwrap();
+
+    questions.into_iter().map(Question::try_from).collect()
 }
