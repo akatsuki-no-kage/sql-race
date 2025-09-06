@@ -1,16 +1,21 @@
-pub mod game;
-pub mod question;
-
 use std::sync::LazyLock;
 
 use serde::Deserialize;
+use strum::Display;
 
-use crate::config::{game::GameConfig, question::QuestionConfig};
+#[derive(Debug, PartialEq, Eq, Hash, Deserialize, Display)]
+#[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case")]
+pub enum Mode {
+    Practice,
+    Challenge,
+}
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
-    pub game: GameConfig,
-    pub question: QuestionConfig,
+    pub game_duration: u64,
+    pub tick_rate: u64,
+    pub mode: Mode,
     pub database_file: String,
 }
 

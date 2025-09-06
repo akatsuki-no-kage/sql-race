@@ -1,13 +1,4 @@
-database_file = "data.db"
-
-[game]
-duration = 180
+game_duration = 180
 tick_rate = 1
-
-[question]
-root = "questions"
-
-[question.count]
-easy = 4
-medium = 3
-hard = 3
+mode = "practice"
+database_file = "data.db"

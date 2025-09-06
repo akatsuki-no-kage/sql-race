@@ -17,6 +17,7 @@ install-path = "CARGO_HOME"
 install-updater = false
 
 include = [
-    "./questions/",
-    "config.toml"
+    "config.toml",
+    "question.practice.toml",
+    "question.challenge.toml",
 ]
