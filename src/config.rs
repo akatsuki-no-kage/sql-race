@@ -1,9 +1,11 @@
 use std::sync::LazyLock;
 
 use serde::Deserialize;
+use strum::IntoStaticStr;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, IntoStaticStr)]
 #[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case")]
 pub enum Mode {
     Practice,
     Challenge,

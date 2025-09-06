@@ -1392,6 +1392,7 @@ dependencies = [
  "rayon",
  "rusqlite",
  "serde",
+ "strum 0.27.2",
  "tree-sitter-highlight",
  "tui-realm-stdlib",
  "tui-textarea",

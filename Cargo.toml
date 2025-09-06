@@ -20,6 +20,7 @@ tui-realm-stdlib = "3.0.0"
 tui-textarea = { git = "https://github.com/mcclure/tui-textarea", branch = "custom-highlight" }
 tuirealm = "3.0.1"
 tuirealm_derive = "2.0.1"
+strum = { version = "0.27.2", features = ["derive"] }
 
 # The profile that 'dist' will build with
 [profile.dist]
