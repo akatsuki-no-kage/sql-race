@@ -252,6 +252,9 @@ impl<T: TerminalAdapter> App<T> {
         self.remount(Id::Question);
         self.remount(Id::Result);
 
+        self.inner.blur().unwrap();
+        self.inner.active(&Id::Editor).unwrap();
+
         None
     }
 
