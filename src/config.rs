@@ -1,16 +1,11 @@
-pub mod game;
-pub mod question;
-
 use std::sync::LazyLock;
 
 use serde::Deserialize;
 
-use crate::config::{game::GameConfig, question::QuestionConfig};
-
 #[derive(Debug, Deserialize)]
 pub struct Config {
-    pub game: GameConfig,
-    pub question: QuestionConfig,
+    pub game_duration: u64,
+    pub tick_rate: u64,
     pub database_file: String,
 }
 
