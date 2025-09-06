@@ -1,5 +1,5 @@
-mod game;
-mod question;
+pub mod game;
+pub mod question;
 
 use std::sync::LazyLock;
 

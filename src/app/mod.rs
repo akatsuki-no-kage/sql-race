@@ -49,7 +49,7 @@ impl Default for App<CrosstermTerminalAdapter> {
         );
 
         let questions =
-            repository::question::get_many(&CONFIG.question.root, CONFIG.question.count).unwrap();
+            repository::question::get_all().unwrap();
 
         let mut app = Self {
             inner,

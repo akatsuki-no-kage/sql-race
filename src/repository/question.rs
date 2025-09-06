@@ -1,8 +1,13 @@
-use std::{fs, io, path::Path};
+use std::{
+    fs, io,
+    path::{Path, PathBuf},
+};
 
 use rand::seq::IteratorRandom;
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use rayon::iter::{IntoParallelRefIterator, ParallelBridge, ParallelIterator};
 use rusqlite::Connection;
+
+use crate::config::{CONFIG, question::Level};
 
 #[derive(Debug, Clone)]
 pub struct Column {
@@ -69,14 +74,35 @@ pub struct Question {
     pub schema: Schema,
 }
 
-pub fn get_many(path: &Path, count: usize) -> io::Result<Vec<Question>> {
-    let mut question_dirs = fs::read_dir(path)?
+fn get_paths(level: Level, count: usize) -> io::Result<Vec<PathBuf>> {
+    let level: &str = level.into();
+
+    let mut question_dirs = fs::read_dir(CONFIG.question.root.join(level))?
         .filter_map(|x| x.ok().map(|x| x.path()))
         .choose_multiple(&mut rand::rng(), count);
-    question_dirs.sort();
+    question_dirs.sort_by_key(|x| {
+        x.file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .parse::<usize>()
+            .unwrap()
+    });
+
+    Ok(question_dirs)
+}
+
+fn get_all_paths() -> impl Iterator<Item = PathBuf> {
+    [Level::Easy, Level::Medium, Level::Hard]
+        .map(|level| get_paths(level, CONFIG.question.count[&level]).unwrap())
+        .into_iter()
+        .flatten()
+}
+
+pub fn get_all() -> io::Result<Vec<Question>> {
+    let question_dirs = get_all_paths();
 
     question_dirs
-        .par_iter()
         .map(|dir| {
             let question = fs::read_to_string(dir.join("question.txt"))?;
 

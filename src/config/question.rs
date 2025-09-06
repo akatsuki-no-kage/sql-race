@@ -2,7 +2,7 @@ use std::{collections::HashMap, path::PathBuf};
 
 use serde::Deserialize;
 
-#[derive(Debug, PartialEq, Eq, Hash, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Level {
     Easy,
