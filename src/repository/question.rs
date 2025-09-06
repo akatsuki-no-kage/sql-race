@@ -93,9 +93,13 @@ impl TryFrom<RawQuestion> for Question {
     }
 }
 
+const PREFIX: &str = "question";
+
 pub fn get_all() -> rusqlite::Result<Vec<Question>> {
+    let question_file = format!("{PREFIX}.{}", CONFIG.mode);
+
     let mut question_pack: QuestionPack = config::Config::builder()
-        .add_source(config::File::with_name("question"))
+        .add_source(config::File::with_name(&question_file))
         .build()
         .and_then(|x| x.try_deserialize())
         .unwrap();
