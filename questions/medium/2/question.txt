@@ -1,3 +1,0 @@
-Retrieve the distinct statuses in the orders table.
-
-Hint: Use DISTINCT in the SELECT clause to eliminate duplicate values in a specific column.

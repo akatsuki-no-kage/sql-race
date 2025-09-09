@@ -1,5 +1,0 @@
-Find categories where the total amount exceeds $200.
-
-Hint:
-	After grouping data with GROUP BY, use the HAVING clause to filter aggregated results.
-	Return category, total_amount.

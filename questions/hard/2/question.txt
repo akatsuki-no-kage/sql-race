@@ -1,4 +1,0 @@
-Retrieve movies with a rating above the average rating.
-
-Hint: A subquery is a query inside another query.
-      Use it with aggregate functions like AVG() to compute intermediate results.

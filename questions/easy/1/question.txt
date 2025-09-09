@@ -1,5 +1,0 @@
-Get all information of students.
-
-Hint: Use SELECT to select data from a database
-      Use FROM to specify which table to select or delete data from.
-      Return all students' information.

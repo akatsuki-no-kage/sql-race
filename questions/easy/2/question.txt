@@ -1,5 +1,0 @@
-Retrieve all products priced above $500.
-
-Hint: Use the WHERE clause to specify a condition.
-      Use the greater than operator (>) for numeric comparisons.
-
