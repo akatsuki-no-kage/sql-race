@@ -4,7 +4,11 @@ mod screen;
 
 use std::time::Duration;
 
-use ratatui::layout::{Constraint, Layout, Rect};
+use ratatui::{
+    layout::{Constraint, Layout, Rect},
+    style::{Color, Style},
+    widgets::Paragraph,
+};
 use tuirealm::{
     Application, AttrValue, Attribute, Component, EventListenerCfg, NoUserEvent, Sub, SubClause,
     SubEventClause, Update,
@@ -171,11 +175,20 @@ impl<T: TerminalAdapter> App<T> {
     pub fn view(&mut self) {
         self.terminal
             .draw(|f| {
-                let components = Self::get_components(self.inner.focus(), self.screen, f.area());
+                let [main_area, footer_area] =
+                    Layout::vertical([Constraint::Min(0), Constraint::Length(1)]).areas(f.area());
+
+                let components = Self::get_components(self.inner.focus(), self.screen, main_area);
 
                 for (id, chunk) in components {
                     self.inner.view(&id, f, chunk);
                 }
+
+                f.render_widget(
+                    Paragraph::new(" Ctrl+H/F1 Help  Ctrl+T Schema  Ctrl+R Run  Ctrl+S Submit ")
+                        .style(Style::default().fg(Color::DarkGray)),
+                    footer_area,
+                );
             })
             .unwrap();
     }
