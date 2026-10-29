@@ -84,6 +84,7 @@ where
 
         match message {
             Message::Quit => self.quit(),
+            Message::ClosePopup => self.close_popup(),
             Message::ToggleHelp => self.toggle(&Id::Help),
             Message::Start(username) => self.start(username),
             Message::ToggleSchema => self.toggle(&Id::SchemaView),
@@ -426,5 +427,12 @@ impl<T: TerminalAdapter> App<T> {
 
     fn current_question(&self) -> &repository::question::Question {
         &self.questions[self.question_index]
+    }
+
+    fn close_popup(&mut self) -> Option<Message> {
+        if matches!(self.inner.focus(), Some(Id::Help) | Some(Id::SchemaView)) {
+            self.inner.blur().unwrap();
+        }
+        None
     }
 }

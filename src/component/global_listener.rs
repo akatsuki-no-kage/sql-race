@@ -15,6 +15,7 @@ pub struct GlobalListener {
 impl Component<Message, NoUserEvent> for GlobalListener {
     fn on(&mut self, event: Event<NoUserEvent>) -> Option<Message> {
         match event {
+            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => Some(Message::ClosePopup),
             Event::Keyboard(KeyEvent {
                 code: Key::Char('q'),
                 modifiers: KeyModifiers::CONTROL,
